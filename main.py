@@ -282,13 +282,13 @@ def insert_items(podio):
                                                 mydb.commit()
                                             except psycopg2.Error as err:
                                                 hour = datetime.datetime.now()
-                                                message = f"{hour.strftime('%H:%M:%S')} -> Aplicativo alterado. Excluindo a tabela \"{table_name}\". {err}"
+                                                message = f"{hour.strftime('%H:%M:%S')} -> Aplicativo alterado. Excluindo a tabela \"{table_name}\"."
                                                 print(message)
                                                 cursor.execute(sql.SQL("DROP TABLE "+table_name))
                                                 return 1
                                 except api.transport.TransportException as err:
+                                    hour = datetime.datetime.now()
                                     if err.status['status'] == '504':
-                                        hour = datetime.datetime.now()
                                         message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
                                         print(message)
                                         return 1
@@ -302,7 +302,6 @@ def insert_items(podio):
                                         )	
                                         return 1
                                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-                                        hour = datetime.datetime.now()
                                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                                         print(message)
                                         return 2
@@ -319,14 +318,14 @@ def insert_items(podio):
                         message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
                         print(message)
                         return 1
-                    if err.status['status'] == '401':	
+                    if err.status['status'] == '401':
                         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."	
                         podio = api.OAuthClient(	
                             env.get('PODIO_CLIENT_ID'),	
                             env.get('PODIO_CLIENT_SECRET'),	
                             env.get('PODIO_USERNAME'),	
                             env.get('PODIO_PASSWORD')
-                        )	
+                        )
                         return 1
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
