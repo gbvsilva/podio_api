@@ -31,6 +31,7 @@ def get_all_workspaces(podio):
                 env.get('PODIO_USERNAME'),
                 env.get('PODIO_PASSWORD')
             )
+            print(message)
             return "token_expirado"
         if err.status['status'] == '400':
             if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
@@ -404,7 +405,7 @@ if __name__ == '__main__':
                 message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
                 print(message)
                 time.sleep(3600)
-            elif res == 3:	
+            elif res == 3:
                 message = "Tentando novamente..."	
                 print(message)	
                 time.sleep(1)
