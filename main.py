@@ -32,10 +32,14 @@ def get_all_workspaces(podio):
                 env.get('PODIO_PASSWORD')
             )
         elif err.status['status'] == '400':
-            if json.loads(err.content.decode('UTF-8'))['error_detail'] == 'oauth.client.invalid_secret':
+            if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                 message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
-            elif json.loads(err.content.decode('UTF-8'))['error_detail'] == 'user.invalid.username':
+            elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
                 message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
+            elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
+                message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
+            elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
+                message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na obtenção das orgs. {err}"
         print(message)
@@ -137,10 +141,14 @@ def create_tables(podio):
                             env.get('PODIO_PASSWORD')
                         )
                     elif err.status['status'] == '400':
-                        if json.loads(err.content.decode('UTF-8'))['error_detail'] == 'oauth.client.invalid_secret':
+                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                             message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
-                        elif json.loads(err.content.decode('UTF-8'))['error_detail'] == 'user.invalid.username':
+                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
                             message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
+                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
+                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
+                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
+                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                     else:
                         message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
                     print(message)
@@ -331,10 +339,14 @@ if __name__ == '__main__':
         hour = datetime.datetime.now()
         message = ""
         if err.status['status'] == '400':
-            if json.loads(err.content.decode('UTF-8'))['error_detail'] == 'oauth.client.invalid_secret':
+            if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                 message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido. Terminando o programa."
-            elif json.loads(err.content.decode('UTF-8'))['error_detail'] == 'user.invalid.username':
+            elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
                 message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido. Terminando o programa."
+            elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
+                message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido. Terminando o programa."
+            elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
+                message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido. Terminando o programa."
             print(message)
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Terminando o programa. Erro no acesso a API. {err}"
