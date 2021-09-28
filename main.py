@@ -41,7 +41,6 @@ def get_all_workspaces(podio):
 # Rotina para a criação inicial do banco de dados MySQL.
 # Recebe a variável autenticada na API Podio e o cursor do BD.
 def create_tables(podio, cursor):
-
     workspaces = get_all_workspaces(podio)
     if workspaces == 'token_expirado':
         return 3
