@@ -31,7 +31,8 @@ def get_all_workspaces(podio):
                 env.get('PODIO_USERNAME'),
                 env.get('PODIO_PASSWORD')
             )
-        elif err.status['status'] == '400':
+            return "token_expirado"
+        if err.status['status'] == '400':
             if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                 message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
             elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
@@ -47,9 +48,10 @@ def get_all_workspaces(podio):
 # Rotina para a criação inicial do banco de dados MySQL.
 # Recebe a variável autenticada na API Podio e o cursor do BD.
 def create_tables(podio):
-
     workspaces = get_all_workspaces(podio)
-    if workspaces is not None:
+    if workspaces == 'token_expirado':
+        return 3
+    if type(workspaces) is list:
         # Acessando o BD para armazenar os dados das workspaces nele
         # Verificando se as workspaces ja estão armazenadas no BD como databases. Se não, executar a criação
         mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'))
@@ -100,9 +102,9 @@ def create_tables(podio):
                             table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label'].strip()
+                                    label = field['label']
                                     # Alguns campos possuem nomes muito grandes
-                                    label = label[:40]
+                                    label = label[:40].strip()
                                     if f"\"{label}\"".lower() in "".join(query).lower():
                                         label += str("".join(query).lower().count(f"\"{label}\"".lower())+1)
                                     query.append(f", \"{label}\" TEXT")
@@ -127,11 +129,11 @@ def create_tables(podio):
                     print(message)
                 except api.transport.TransportException as err:
                     hour = datetime.datetime.now()
+                    message = ""
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                         print(message)
                         return 2
-                    message = ""
                     if err.status['status'] == '401':
                         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
                         podio = api.OAuthClient(
@@ -140,7 +142,8 @@ def create_tables(podio):
                             env.get('PODIO_USERNAME'),
                             env.get('PODIO_PASSWORD')
                         )
-                    elif err.status['status'] == '400':
+                        return 3
+                    if err.status['status'] == '400':
                         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                             message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
                         elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
@@ -161,7 +164,9 @@ def create_tables(podio):
 # Retorna 2 caso seja atingido o limite de requisições por hora
 def insert_items(podio):
     workspaces = get_all_workspaces(podio)
-    if workspaces is not None:
+    if workspaces == 'token_expirado':
+        return 1
+    if type(workspaces) is list:
         mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'))
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
@@ -192,8 +197,8 @@ def insert_items(podio):
                             table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label'].strip()
-                                    label = label[:40]
+                                    label = field['label']
+                                    label = label[:40].strip()
                                     table_labels.append("\"" + label + "\"")
 
                             # Fazendo requisicoes percorrendo todos os dados existentes
@@ -226,7 +231,7 @@ def insert_items(podio):
                                             # print(fields)
                                             while i < len(table_labels):
                                                 s = ""
-                                                if j < len(fields) and str("\"" + fields[j]['label'][:40] + "\"").strip().lower() == table_labels[i].lower():
+                                                if j < len(fields) and str("\"" + fields[j]['label'][:40].strip() + "\"").lower() == table_labels[i].lower():
                                                     # print(str("`" + fields[j]['label'][:40] + "`").lower(), table_labels[i].lower())
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
@@ -287,7 +292,16 @@ def insert_items(podio):
                                         message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
                                         print(message)
                                         return 1
-                                    elif 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
+                                    if err.status['status'] == '401':	
+                                        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."	
+                                        podio = api.OAuthClient(	
+                                            env.get('PODIO_CLIENT_ID'),	
+                                            env.get('PODIO_CLIENT_SECRET'),	
+                                            env.get('PODIO_USERNAME'),	
+                                            env.get('PODIO_PASSWORD')
+                                        )	
+                                        return 1
+                                    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                                         hour = datetime.datetime.now()
                                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                                         print(message)
@@ -300,17 +314,24 @@ def insert_items(podio):
                                 return 1
 
                 except api.transport.TransportException as err:
+                    hour = datetime.datetime.now()
                     if err.status['status'] == '504':
-                        hour = datetime.datetime.now()
                         message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
                         print(message)
                         return 1
-                    elif 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-                        hour = datetime.datetime.now()
+                    if err.status['status'] == '401':	
+                        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."	
+                        podio = api.OAuthClient(	
+                            env.get('PODIO_CLIENT_ID'),	
+                            env.get('PODIO_CLIENT_SECRET'),	
+                            env.get('PODIO_USERNAME'),	
+                            env.get('PODIO_PASSWORD')
+                        )	
+                        return 1
+                    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                         print(message)
                         return 2
-                    hour = datetime.datetime.now()
                     message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
                     print(message)
                     return 1
@@ -325,7 +346,8 @@ if __name__ == '__main__':
     password = env.get('PODIO_PASSWORD')
 
     #print(client_id, client_secret, username, password)
-
+    message = "==== PODIO API PYTHON SCRIPT ===="
+    print(message)
     # Autenticando na plataforma do Podio com as credenciais recuperadas acima
     try:
         podio = api.OAuthClient(
@@ -347,7 +369,6 @@ if __name__ == '__main__':
                 message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido. Terminando o programa."
             elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                 message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido. Terminando o programa."
-            print(message)
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Terminando o programa. Erro no acesso a API. {err}"
         print(message)
@@ -384,6 +405,10 @@ if __name__ == '__main__':
                 message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
                 print(message)
                 time.sleep(3600)
+            elif res == 3:	
+                message = "Tentando novamente..."	
+                print(message)	
+                time.sleep(1)
             else:
                 hour = datetime.datetime.now()
                 message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na criação/atualização do BD. Terminando o programa."
