@@ -287,7 +287,6 @@ def insert_items(podio, cursor):
                 except api.transport.TransportException as err:
                     hour = datetime.datetime.now()
                     if err.status['status'] == '504':
-                        hour = datetime.datetime.now()
                         message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
                         print(message)
                         return 1
