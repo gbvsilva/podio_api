@@ -203,53 +203,45 @@ def insert_items(podio, cursor):
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\"" + str(item['created_on']) + "\"", ","])
 
-                                            fields = item['fields']
-                                            # Fazendo a comparação entre os campos existentes e os preenchidos
-                                            # Caso o campo esteja em branco no Podio, preencher com '?'
-                                            i = 0
-                                            j = 0
-                                            # print(table_labels)
-                                            # print(fields)
-                                            while i < len(table_labels):
-                                                s = ""
-                                                if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`").lower() == table_labels[i].lower():
-                                                    # print(str("`" + fields[j]['label'][:40] + "`").lower(), table_labels[i].lower())
-                                                    # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
-                                                    if fields[j]['type'] == "contact":
-                                                        s += "\""
-                                                        # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
-                                                        # Podem haver aspas duplas inseridas no valor do campo. Substituir com aspas simples
-                                                        for elem in fields[j]['values']:
-                                                            s += elem['value']['name'].replace("\"", "'") + "|"
-                                                        s = s[:-1]
-                                                    elif fields[j]['type'] == "category":
-                                                        s += "\"" + fields[j]['values'][0]['value']['text'].replace("\"", "'")
-                                                    elif fields[j]['type'] == "date" or fields[j]['type'] == "calculation" and 'start' in \
-                                                            fields[j]['values'][0]:
-                                                        s += "\"" + fields[j]['values'][0]['start']
-                                                    elif fields[j]['type'] == "money":
-                                                        s += "\"" + fields[j]['values'][0]['currency'] + " " + fields[j]['values'][0]['value']
-                                                    elif fields[j]['type'] == "image":
-                                                        s += "\"" + fields[j]['values'][0]['value']['link']
-                                                    elif fields[j]['type'] == "embed":
-                                                        s += "\"" + fields[j]['values'][0]['embed']['url']
-                                                    elif fields[j]['type'] == "app":
-                                                        # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
-                                                        s += "\""
-                                                        for val in fields[j]['values']:
-                                                            s += val['value']['title'].replace("\"", "'") + "|"
-                                                        s = s[:-1]
-                                                    else:
-                                                        value = str(fields[j]['values'][0]['value'])
-                                                        if "\"" in value:
-                                                            s += "\"" + value.replace("\"", "'")
-                                                        else:
-                                                            s += "\"" + value
+                                            all_fields = item['fields']
+                                            # Fazendo a comparação entre os campos existentes e os preenchidos.
+                                            #print(table_labels)
+                                            fields = []
+                                            for field in all_fields:
+                                                if field['status'] == "active":
+                                                    fields.append(field)       
+                                            for i in range(len(fields)):
+                                                s = "\""
+                                                if fields[i]['type'] == "contact":
+                                                    # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
+                                                    # Podem haver aspas duplas inseridas no valor do campo. Substituir com aspas simples
+                                                    for elem in fields[i]['values']:
+                                                        s += elem['value']['name'].replace("\"", "'") + "|"
+                                                    s = s[:-1]
+                                                elif fields[i]['type'] == "category":
+                                                    s += "\"" + fields[i]['values'][0]['value']['text'].replace("\"", "'")
+                                                elif fields[i]['type'] == "date" or fields[i]['type'] == "calculation" and 'start' in \
+                                                        fields[i]['values'][0]:
+                                                    s += "\"" + fields[i]['values'][0]['start']
+                                                elif fields[i]['type'] == "money":
+                                                    s += "\"" + fields[i]['values'][0]['currency'] + " " + fields[i]['values'][0]['value']
+                                                elif fields[i]['type'] == "image":
+                                                    s += "\"" + fields[i]['values'][0]['value']['link']
+                                                elif fields[i]['type'] == "embed":
+                                                    s += "\"" + fields[i]['values'][0]['embed']['url']
+                                                elif fields[i]['type'] == "app":
+                                                    # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
                                                     s += "\""
-                                                    j += 1
+                                                    for val in fields[i]['values']:
+                                                        s += val['value']['title'].replace("\"", "'") + "|"
+                                                    s = s[:-1]
                                                 else:
-                                                    s += "\"?\""
-                                                i += 1
+                                                    value = str(fields[i]['values'][0]['value'])
+                                                    if "\"" in value:
+                                                        s += "\"" + value.replace("\"", "'")
+                                                    else:
+                                                        s += "\"" + value
+                                                s += "\""
                                                 query.append(s)
                                                 query.append(",")
                                             query.pop()
