@@ -85,7 +85,7 @@ def create_tables(podio):
                 cursor = mydb.cursor()
                 try:
                     apps = podio.Application.list_in_space(w.get('space_id'))
-                    # print(apps)
+                    #print(apps)
                     cursor.execute(sql.SQL("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;"))
                     tables = cursor.fetchall()
                     #print(db_name,tables)
@@ -95,12 +95,12 @@ def create_tables(podio):
                         if app.get('status') == "active" and (table_name,) not in tables:
                             #print(table_name)
                             app_info = podio.Application.find(app.get('app_id'))
-                            # print(app_info)
+                            #print(app_info)
                             query = ["CREATE TABLE " + table_name, "("]
                             query.append("\"id\" INTEGER PRIMARY KEY NOT NULL")
                             query.append(", \"created_on_date\" DATE")
                             query.append(", \"created_on_time\" TIME")
-                            table_labels = []
+                            #table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
                                     label = field['label']
@@ -109,7 +109,7 @@ def create_tables(podio):
                                     if f"\"{label}\"".lower() in "".join(query).lower():
                                         label += str("".join(query).lower().count(f"\"{label}\"".lower())+1)
                                     query.append(f", \"{label}\" TEXT")
-                                    table_labels.append("\""+label+"\"")
+                                    #table_labels.append("\""+label+"\"")
                             query.append(")")
 
                             #print(table_name)
@@ -143,6 +143,7 @@ def create_tables(podio):
                             env.get('PODIO_USERNAME'),
                             env.get('PODIO_PASSWORD')
                         )
+                        print(message)
                         return 3
                     if err.status['status'] == '400':
                         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
@@ -226,55 +227,45 @@ def insert_items(podio):
                                             fields = item['fields']
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
-                                            i = 0
-                                            j = 0
-                                            # print(table_labels)
-                                            # print(fields)
-                                            while i < len(table_labels):
-                                                s = ""
+                                            j = 0	
+                                            for i in range(len(table_labels)):
+                                                s = "\'"
                                                 if j < len(fields) and str("\"" + fields[j]['label'][:40].strip() + "\"").lower() == table_labels[i].lower():
                                                     # print(str("`" + fields[j]['label'][:40] + "`").lower(), table_labels[i].lower())
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
-                                                        s += "\'"
                                                         # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
                                                         # Podem haver aspas duplas inseridas no valor do campo. Substituir com aspas simples
                                                         for elem in fields[j]['values']:
                                                             s += elem['value']['name'].replace("\'", "") + "|"
                                                         s = s[:-1]
                                                     elif fields[j]['type'] == "category":
-                                                        s += "\'" + fields[j]['values'][0]['value']['text'].replace("\'", "")
+                                                        s += fields[j]['values'][0]['value']['text'].replace("\'", "")
                                                     elif fields[j]['type'] == "date" or fields[j]['type'] == "calculation" and 'start' in \
                                                             fields[j]['values'][0]:
-                                                        s += "\'" + fields[j]['values'][0]['start']
+                                                        s += fields[j]['values'][0]['start']
                                                     elif fields[j]['type'] == "money":
-                                                        s += "\'" + fields[j]['values'][0]['currency'] + " " + fields[j]['values'][0]['value']
+                                                        s += fields[j]['values'][0]['currency'] + " " + fields[j]['values'][0]['value']
                                                     elif fields[j]['type'] == "image":
-                                                        s += "\'" + fields[j]['values'][0]['value']['link']
+                                                        s += fields[j]['values'][0]['value']['link']
                                                     elif fields[j]['type'] == "embed":
-                                                        s += "\'" + fields[j]['values'][0]['embed']['url']
+                                                        s += fields[j]['values'][0]['embed']['url']
                                                     elif fields[j]['type'] == "app":
                                                         # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
-                                                        s += "\'"
                                                         for val in fields[j]['values']:
                                                             s += val['value']['title'].replace("\'", "") + "|"
                                                         s = s[:-1]
                                                     else:
                                                         value = str(fields[j]['values'][0]['value'])
-                                                        if "\'" in value:
-                                                            s += "\'" + value.replace("\'", "")
-                                                        else:
-                                                            s += "\'" + value
+                                                        s += value.replace("\'", "")
                                                     s += "\'"
                                                     j += 1
                                                 else:
-                                                    s += "\'?\'"
-                                                i += 1
+                                                    s += "?\'"
                                                 query.append(s)
                                                 query.append(",")
                                             query.pop()
                                             query.append(")")
-
                                             try:
                                                 cursor.execute(sql.SQL("".join(query)))
                                                 hour = datetime.datetime.now()
