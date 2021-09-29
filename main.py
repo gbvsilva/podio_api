@@ -87,7 +87,6 @@ def create_tables(podio, cursor):
                             query = ["CREATE TABLE " + table_name, "("]
                             query.append("`id` INTEGER PRIMARY KEY NOT NULL")
                             query.append(", `created_on` DATETIME")
-                            table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
                                     label = field['label']
@@ -96,7 +95,6 @@ def create_tables(podio, cursor):
                                     if f"`{label}`".lower() in "".join(query).lower():
                                         label += str("".join(query).lower().count(f"`{label}`".lower())+1)
                                     query.append(f", `{label}` VARCHAR(255)")
-                                    table_labels.append("`"+label+"`")
                             query.append(")")
 
                             #print(table_name)
@@ -174,13 +172,6 @@ def insert_items(podio, cursor):
                             app_info = podio.Application.find(app.get('app_id'))
                             cursor.execute("SELECT COUNT(id) FROM "+table_name)
                             dbcount = cursor.fetchall()[0][0]
-
-                            table_labels = []
-                            for field in app_info.get('fields'):
-                                if field['status'] == "active":
-                                    label = field['label']
-                                    label = label[:40].strip()
-                                    table_labels.append("`" + label + "`")
 
                             # Fazendo requisicoes percorrendo todos os dados existentes
                             # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
