@@ -94,8 +94,8 @@ def create_tables(podio, cursor):
                                     label = field['label']
                                     # Alguns campos possuem nomes muito grandes
                                     label = label[:40].strip()
-                                    if f"`{label}`".lower() in "".join(query).lower():
-                                        label += str("".join(query).lower().count(f"`{label}`".lower())+1)
+                                    if f"`{label}".lower() in "".join(query).lower():
+                                        label += str("".join(query).lower().count(f"`{label}".lower())+1)
                                     query.append(f", `{label}` VARCHAR(255)")
                                     #table_labels.append("`"+label+"`")
                             query.append(")")
@@ -211,6 +211,8 @@ def insert_items(podio, cursor):
                                             j = 0
                                             for i in range(len(table_labels)):
                                                 s = "\""
+                                                while fields[j]['status'] != "active":
+                                                    j += 1
                                                 if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`").lower() == table_labels[i].lower():
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
