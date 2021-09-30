@@ -42,6 +42,9 @@ def get_all_workspaces(podio):
                 message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
             elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                 message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
+            else:
+                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."
+                return "query_nula"
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na obtenção das orgs. {err}"
         print(message)
@@ -50,7 +53,7 @@ def get_all_workspaces(podio):
 # Recebe a variável autenticada na API Podio e o cursor do BD.
 def create_tables(podio):
     workspaces = get_all_workspaces(podio)
-    if workspaces == 'token_expirado':
+    if workspaces == 'token_expirado' or workspaces == 'query_nula':
         return 3
     if type(workspaces) is list:
         # Acessando o BD para armazenar os dados das workspaces nele
@@ -106,8 +109,8 @@ def create_tables(podio):
                                     label = field['label']
                                     # Alguns campos possuem nomes muito grandes
                                     label = label[:40].strip()
-                                    if f"\"{label}\"".lower() in "".join(query).lower():
-                                        label += str("".join(query).lower().count(f"\"{label}\"".lower())+1)
+                                    if f"\"{label}".lower() in "".join(query).lower():
+                                        label += str("".join(query).lower().count(f"\"{label}".lower())+1)
                                     query.append(f", \"{label}\" TEXT")
                                     #table_labels.append("\""+label+"\"")
                             query.append(")")
@@ -130,7 +133,7 @@ def create_tables(podio):
                     print(message)
                 except api.transport.TransportException as err:
                     hour = datetime.datetime.now()
-                    message = ""
+                    #message = ""
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                         print(message)
@@ -166,7 +169,7 @@ def create_tables(podio):
 # Retorna 2 caso seja atingido o limite de requisições por hora
 def insert_items(podio):
     workspaces = get_all_workspaces(podio)
-    if workspaces == 'token_expirado':
+    if workspaces == 'token_expirado' or workspaces == 'query_nula':
         return 1
     if type(workspaces) is list:
         mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'))
