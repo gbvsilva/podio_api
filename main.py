@@ -81,9 +81,8 @@ def create_tables(podio):
                     print(message)
                 except psycopg2.Error as err:
                     hour = datetime.datetime.now()
-                    message = f"{hour.strftime('%H:%M:%S')} -> Erro na criação do BD. {err}"
+                    message = f"{hour.strftime('%H:%M:%S')} -> Erro na criação do BD \"{db_name}\". {err}"
                     print(message)
-                    return 1
 
             # Criando as tabelas para cada database criado acima
             cursor.execute(sql.SQL("SELECT * FROM pg_catalog.pg_database"))
@@ -177,9 +176,13 @@ def create_tables(podio):
                     else:
                         message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
                     print(message)
-                    return 1
+                    #return 1
+                    # Não parando o fluxo
+                    return 3
         return 0
-    return 1
+    #return 1
+    # Não parando o fluxo
+    return 3
 
 # Inserindo dados no Banco. Retorna 0 se nao ocorreram erros
 # Retorna 1 caso precise refazer a estrutura do Banco, excluindo alguma(s) tabela(s).
