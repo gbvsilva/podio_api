@@ -183,7 +183,7 @@ def insert_items(podio, cursor):
                                     label = field['label']
                                     label = label[:40].strip()
                                     table_labels.append("`" + label + "`")
-
+                            
                             # Fazendo requisicoes percorrendo todos os dados existentes
                             # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
                             # Ou seja, a cada passo novo (offset) items são requisitados, com base na
@@ -199,21 +199,20 @@ def insert_items(podio, cursor):
                                     for step in range(dbcount, number_of_items, 500):
                                         # O valor padrão do offset é 0 de acordo com a documentação da API.
                                         # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                                        items_filtered = podio.Item.filter(app_info.get('app_id'), {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
-                                        items = items_filtered.get('items')
+                                        filtered_items = podio.Item.filter(app_info.get('app_id'), {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
+                                        items = filtered_items.get('items')
                                         for item in items:
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\"" + str(item['created_on']) + "\"", ","])
 
-                                            fields = item['fields']
+                                            fields = [x for x in item['fields'] if f"`{x['label'][:40].strip()}`" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
+                                            i = 0
                                             j = 0
-                                            for i in range(len(table_labels)):
+                                            while i < len(table_labels):
                                                 s = "\""
-                                                while fields[j]['status'] != "active":
-                                                    j += 1
-                                                if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`").lower() == table_labels[i].lower():
+                                                if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`") == table_labels[i]:
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
                                                         # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
@@ -246,6 +245,7 @@ def insert_items(podio, cursor):
                                                     s += "?\""
                                                 query.append(s)
                                                 query.append(",")
+                                                i += 1
                                             query.pop()
                                             query.append(")")
                                             try:
