@@ -218,19 +218,19 @@ def insert_items(podio):
                                     for step in range(dbcount, number_of_items, 500):
                                         # O valor padrão do offset é 0 de acordo com a documentação da API.
                                         # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                                        items_filtered = podio.Item.filter(app_info.get('app_id'), {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
-                                        items = items_filtered.get('items')
+                                        filtered_items = podio.Item.filter(app_info.get('app_id'), {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
+                                        items = filtered_items.get('items')
                                         for item in items:
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\'" + str(item['created_on'].split()[0]) + "\'", \
                                                           ",\'" + str(item['created_on']).split()[1] + "\',"])
-                                            fields = item['fields']
+                                            fields = [x for x in item['fields'] if f"\"{x['label'][:40].strip()}\"" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
                                             j = 0	
                                             for i in range(len(table_labels)):
                                                 s = "\'"
-                                                if j < len(fields) and str("\"" + fields[j]['label'][:40].strip() + "\"").lower() == table_labels[i].lower():
+                                                if j < len(fields) and str("\"" + fields[j]['label'][:40].strip() + "\"") == table_labels[i]:
                                                     # print(str("`" + fields[j]['label'][:40] + "`").lower(), table_labels[i].lower())
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
@@ -291,7 +291,8 @@ def insert_items(podio):
                                             env.get('PODIO_CLIENT_SECRET'),	
                                             env.get('PODIO_USERNAME'),	
                                             env.get('PODIO_PASSWORD')
-                                        )	
+                                        )
+                                        print(message)
                                         return 1
                                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
@@ -318,6 +319,7 @@ def insert_items(podio):
                             env.get('PODIO_USERNAME'),	
                             env.get('PODIO_PASSWORD')
                         )
+                        print(message)
                         return 1
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
