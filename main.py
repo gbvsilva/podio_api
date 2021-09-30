@@ -274,6 +274,7 @@ def insert_items(podio, cursor):
                                             env.get('PODIO_USERNAME'),
                                             env.get('PODIO_PASSWORD')
                                         )
+                                        print(message)
                                         return 1
                                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
