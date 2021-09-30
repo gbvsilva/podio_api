@@ -39,15 +39,15 @@ def get_all_workspaces(podio):
                 message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
             elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                 message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
-            else:	
-                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."	
-                podio = api.OAuthClient(	
-                    env.get('PODIO_CLIENT_ID'),	
-                    env.get('PODIO_CLIENT_SECRET'),	
-                    env.get('PODIO_USERNAME'),	
-                    env.get('PODIO_PASSWORD')	
+            else:
+                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."
+                podio = api.OAuthClient(
+                    env.get('PODIO_CLIENT_ID'),
+                    env.get('PODIO_CLIENT_SECRET'),
+                    env.get('PODIO_USERNAME'),
+                    env.get('PODIO_PASSWORD')
                 )	
-                print(message)	
+                print(message)
                 return "query_nula"
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na obtenção das orgs. {err}"
@@ -73,9 +73,8 @@ def create_tables(podio, cursor):
                     print(message)
                 except mysql.connector.Error as err:
                     hour = datetime.datetime.now()
-                    message = f"{hour.strftime('%H:%M:%S')} -> Erro na criação do BD. {err}"
+                    message = f"{hour.strftime('%H:%M:%S')} -> Erro na criação do BD `{db_name}`. {err}"
                     print(message)
-                    return 1
 
             # Criando as tabelas para cada database criado acima
             cursor.execute("SHOW DATABASES")
@@ -127,7 +126,7 @@ def create_tables(podio, cursor):
                     print(message)
                 except api.transport.TransportException as err:
                     hour = datetime.datetime.now()
-                    message = ""
+                    #message = ""
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                         print(message)
@@ -159,14 +158,18 @@ def create_tables(podio, cursor):
                                 env.get('PODIO_USERNAME'),	
                                 env.get('PODIO_PASSWORD')	
                             )	
-                            print(message)	
+                            print(message)
                             return 3
                     else:
                         message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
                     print(message)
-                    return 1
+                    #return 1
+                    # Não parando o fluxo
+                    return 3
         return 0
-    return 1
+    #return 1
+    # Não parando o fluxo
+    return 3
 
 # Inserindo dados no Banco. Retorna 0 se nao ocorreram erros
 # Retorna 1 caso precise refazer a estrutura do Banco, excluindo alguma(s) tabela(s).
@@ -296,15 +299,15 @@ def insert_items(podio, cursor):
                                         )
                                         print(message)
                                         return 1
-                                    if err.status['status'] == '400':	
-                                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."	
-                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."	
-                                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."	
-                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."	
+                                    if err.status['status'] == '400':
+                                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
+                                            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
+                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
+                                            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
+                                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
+                                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
+                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
+                                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                                         else:	
                                             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."	
                                             podio = api.OAuthClient(	
@@ -313,7 +316,7 @@ def insert_items(podio, cursor):
                                                 env.get('PODIO_USERNAME'),	
                                                 env.get('PODIO_PASSWORD')	
                                             )	
-                                            print(message)	
+                                            print(message)
                                             return 1
                                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
