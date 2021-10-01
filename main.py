@@ -206,7 +206,7 @@ def insert_items(podio, cursor):
                                     label = field['label']
                                     label = label[:40].strip()
                                     table_labels.append("`" + label + "`")
-                            
+
                             # Fazendo requisicoes percorrendo todos os dados existentes
                             # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
                             # Ou seja, a cada passo novo (offset) items são requisitados, com base na
@@ -231,9 +231,8 @@ def insert_items(podio, cursor):
                                             fields = [x for x in item['fields'] if f"`{x['label'][:40].strip()}`" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
-                                            i = 0
                                             j = 0
-                                            while i < len(table_labels):
+                                            for i in range(len(table_labels)):
                                                 s = "\""
                                                 if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`") == table_labels[i]:
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
@@ -268,7 +267,6 @@ def insert_items(podio, cursor):
                                                     s += "?\""
                                                 query.append(s)
                                                 query.append(",")
-                                                i += 1
                                             query.pop()
                                             query.append(")")
                                             try:
