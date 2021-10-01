@@ -140,7 +140,8 @@ def create_tables(podio, cursor):
                             env.get('PODIO_PASSWORD')
                         )
                         print(message)
-                        return 3
+                        #return 3
+                        continue
                     if err.status['status'] == '400':
                         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                             message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
@@ -159,13 +160,15 @@ def create_tables(podio, cursor):
                                 env.get('PODIO_PASSWORD')	
                             )	
                             print(message)
-                            return 3
+                            #return 3
+                            continue
                     else:
                         message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
                     print(message)
                     #return 1
                     # Não parando o fluxo
-                    return 3
+                    #return 3
+                    continue
         return 0
     #return 1
     # Não parando o fluxo
@@ -296,7 +299,8 @@ def insert_items(podio, cursor):
                                             env.get('PODIO_PASSWORD')
                                         )
                                         print(message)
-                                        return 1
+                                        #return 1
+                                        continue
                                     if err.status['status'] == '400':
                                         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
                                             message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
@@ -325,7 +329,8 @@ def insert_items(podio, cursor):
                                 message = f"{hour.strftime('%H:%M:%S')} -> Itens excluídos do Podio. Excluindo a tabela `{table_name}` do BD e recriando-a."
                                 print(message)
                                 cursor.execute("DROP TABLE " + table_name)
-                                return 1
+                                #return 1
+                                continue
 
                 except api.transport.TransportException as err:
                     hour = datetime.datetime.now()
@@ -361,7 +366,7 @@ def insert_items(podio, cursor):
                                 env.get('PODIO_PASSWORD')	
                             )	
                             print(message)	
-                            return 1
+                            #return 1
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
                         print(message)
