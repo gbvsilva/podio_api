@@ -40,7 +40,7 @@ def get_all_workspaces(podio):
             elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                 message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
             else:
-                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."
+                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
                 podio = api.OAuthClient(
                     env.get('PODIO_CLIENT_ID'),
                     env.get('PODIO_CLIENT_SECRET'),
@@ -152,7 +152,7 @@ def create_tables(podio, cursor):
                         elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                         else:	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."	
+                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
                             podio = api.OAuthClient(	
                                 env.get('PODIO_CLIENT_ID'),	
                                 env.get('PODIO_CLIENT_SECRET'),	
@@ -311,7 +311,7 @@ def insert_items(podio, cursor):
                                         elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
                                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                                         else:	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."	
+                                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
                                             podio = api.OAuthClient(	
                                                 env.get('PODIO_CLIENT_ID'),	
                                                 env.get('PODIO_CLIENT_SECRET'),	
@@ -358,7 +358,7 @@ def insert_items(podio, cursor):
                         elif json.loads(err.content)['error_detail'] == 'user.invalid.password':	
                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."	
                         else:	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query."	
+                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
                             podio = api.OAuthClient(	
                                 env.get('PODIO_CLIENT_ID'),	
                                 env.get('PODIO_CLIENT_SECRET'),	
