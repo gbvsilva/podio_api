@@ -8,6 +8,61 @@ import mysql.connector
 import time, datetime
 import json, requests
 
+def handling_podio_error(err):
+    hour = datetime.datetime.now()
+    message = ""
+    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
+        message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
+        print(message)
+        return "rate_limit"
+    if err.status['status'] == '401':
+        # Token expirado. Re-autenticando
+        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
+        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                    'password': env.get('PODIO_PASSWORD')})
+        transport.OAuthToken(resp)
+        # podio = api.OAuthClient(
+        #         env.get('PODIO_CLIENT_ID'),
+        #         env.get('PODIO_CLIENT_SECRET'),
+        #         env.get('PODIO_USERNAME'),
+        #         env.get('PODIO_PASSWORD')
+        # )
+        print(message)
+        return "token_expired"
+    if err.status['status'] == '400':
+        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
+            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
+        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
+            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
+        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
+            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
+        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
+            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
+        else:
+            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
+            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                        'password': env.get('PODIO_PASSWORD')})
+            transport.OAuthToken(resp)
+            # podio = api.OAuthClient(
+            #     env.get('PODIO_CLIENT_ID'),
+            #     env.get('PODIO_CLIENT_SECRET'),
+            #     env.get('PODIO_USERNAME'),
+            #     env.get('PODIO_PASSWORD')
+            # )
+            print(message)
+            return "null_query"
+        return "status_400"
+    if err.status['status'] == '504':
+        message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
+        print(message)
+        return "status_504"
+    else:
+        message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado no acesso a API. {err}"
+    print(message)
+    return "not_known_yet"
+
 def get_all_workspaces(podio):
     # Obtendo informações de todas as organizações que o usuário tem acesso no Podio
     try:
@@ -18,56 +73,17 @@ def get_all_workspaces(podio):
         print(message)
         return podio.Space.find_all_for_org(orgs[0]['org_id'])
     except api.transport.TransportException as err:
-        hour = datetime.datetime.now()
-        message = ""
-        if err.status['status'] == '401':
-            # Token expirado. Re-autenticando
-            message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-	                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-	                    'password': env.get('PODIO_PASSWORD')})
-            transport.OAuthToken(resp)
-            # podio = api.OAuthClient(
-            #         env.get('PODIO_CLIENT_ID'),
-            #         env.get('PODIO_CLIENT_SECRET'),
-            #         env.get('PODIO_USERNAME'),
-            #         env.get('PODIO_PASSWORD')
-            # )
-            print(message)
-            return "token_expirado"
-        if err.status['status'] == '400':
-            if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
-                message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
-            elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
-                message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
-            elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
-                message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
-            elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
-                message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
-            else:
-                message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
-                resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-	                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-	                        'password': env.get('PODIO_PASSWORD')})
-                transport.OAuthToken(resp)
-                # podio = api.OAuthClient(
-                #     env.get('PODIO_CLIENT_ID'),
-                #     env.get('PODIO_CLIENT_SECRET'),
-                #     env.get('PODIO_USERNAME'),
-                #     env.get('PODIO_PASSWORD')
-                # )
-                print(message)
-                return "query_nula"
-        else:
-            message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na obtenção das orgs. {err}"
-        print(message)
+         return handling_podio_error(err)
+
 
 # Rotina para a criação inicial do banco de dados MySQL.
 # Recebe a variável autenticada na API Podio e o cursor do BD.
 def create_tables(podio, cursor):
     workspaces = get_all_workspaces(podio)
-    if workspaces == 'token_expirado' or workspaces == 'query_nula':
+    if workspaces == 'token_expired' or workspaces == 'null_query':
         return 3
+    if workspaces == 'rate_limit':
+        return 2
     if type(workspaces) is list:
         # Verificando se as workspaces ja estão armazenadas no BD como databases. Se não, executar a criação
         cursor.execute("SHOW DATABASES")
@@ -134,58 +150,10 @@ def create_tables(podio, cursor):
                     message = f"{hour.strftime('%H:%M:%S')} -> Erro no acesso ao BD. {err}"
                     print(message)
                 except api.transport.TransportException as err:
-                    hour = datetime.datetime.now()
-                    #message = ""
-                    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-                        message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
-                        print(message)
-                        return 2
-                    if err.status['status'] == '401':
-                        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-	                                'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-	                                'password': env.get('PODIO_PASSWORD')})
-                        transport.OAuthToken(resp)
-                        # podio = api.OAuthClient(
-                        #     env.get('PODIO_CLIENT_ID'),
-                        #     env.get('PODIO_CLIENT_SECRET'),
-                        #     env.get('PODIO_USERNAME'),
-                        #     env.get('PODIO_PASSWORD')
-                        # )
-                        print(message)
+                    handled = handling_podio_error(err)
+                    if handled == 'token_expired' or handled == 'status_400' or handled == 'not_known_yet':
                         #return 3
                         continue
-                    if err.status['status'] == '400':
-                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
-                            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
-                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
-                            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
-                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
-                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
-                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
-                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
-                        else:	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                                        'password': env.get('PODIO_PASSWORD')})
-                            transport.OAuthToken(resp)
-                            # podio = api.OAuthClient(	
-                            #     env.get('PODIO_CLIENT_ID'),	
-                            #     env.get('PODIO_CLIENT_SECRET'),	
-                            #     env.get('PODIO_USERNAME'),	
-                            #     env.get('PODIO_PASSWORD')	
-                            # )	
-                            print(message)
-                            #return 3
-                            continue
-                    else:
-                        message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
-                    print(message)
-                    #return 1
-                    # Não parando o fluxo
-                    #return 3
-                    continue
         return 0
     #return 1
     # Não parando o fluxo
@@ -196,7 +164,7 @@ def create_tables(podio, cursor):
 # Retorna 2 caso seja atingido o limite de requisições por hora
 def insert_items(podio, cursor):
     workspaces = get_all_workspaces(podio)
-    if workspaces == 'token_expirado' or workspaces == 'query_nula':
+    if workspaces == 'token_expired' or workspaces == 'null_query':
         return 1
     if type(workspaces) is list:
         cursor.execute("SHOW DATABASES")
@@ -302,52 +270,13 @@ def insert_items(podio, cursor):
                                                 cursor.execute("DROP TABLE "+table_name)
                                                 return 1
                                 except api.transport.TransportException as err:
-                                    hour = datetime.datetime.now()
-                                    if err.status['status'] == '504':
-                                        message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
-                                        print(message)
+                                    handled = handling_podio_error(err)
+                                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400':
                                         return 1
-                                    if err.status['status'] == '401':
-                                        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                                                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                                                    'password': env.get('PODIO_PASSWORD')})
-                                        transport.OAuthToken(resp)
-                                        # podio = api.OAuthClient(
-                                        #     env.get('PODIO_CLIENT_ID'),
-                                        #     env.get('PODIO_CLIENT_SECRET'),
-                                        #     env.get('PODIO_USERNAME'),
-                                        #     env.get('PODIO_PASSWORD')
-                                        # )
-                                        print(message)
+                                    if handled == 'token_expired':
                                         #return 1
                                         continue
-                                    if err.status['status'] == '400':
-                                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."
-                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."
-                                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
-                                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."
-                                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
-                                        else:	
-                                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                                                        'password': env.get('PODIO_PASSWORD')})
-                                            transport.OAuthToken(resp)
-                                            # podio = api.OAuthClient(	
-                                            #     env.get('PODIO_CLIENT_ID'),	
-                                            #     env.get('PODIO_CLIENT_SECRET'),	
-                                            #     env.get('PODIO_USERNAME'),	
-                                            #     env.get('PODIO_PASSWORD')	
-                                            # )	
-                                            print(message)
-                                            return 1
-                                    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-                                        message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
-                                        print(message)
+                                    if handled == 'rate_limit':
                                         return 2
                             elif dbcount > number_of_items:
                                 hour = datetime.datetime.now()
@@ -358,54 +287,14 @@ def insert_items(podio, cursor):
                                 continue
 
                 except api.transport.TransportException as err:
-                    hour = datetime.datetime.now()
-                    if err.status['status'] == '504':
-                        message = f"{hour.strftime('%H:%M:%S')} -> Servidor demorou muito para responder. {err}"
-                        print(message)
+                    handled = handling_podio_error(err)
+                    if handled == 'status_504' or handled == 'status_400':
                         return 1
-                    if err.status['status'] == '401':
-                        message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                                    'password': env.get('PODIO_PASSWORD')})
-                        transport.OAuthToken(resp)
-                        # podio = api.OAuthClient(
-                        #     env.get('PODIO_CLIENT_ID'),
-                        #     env.get('PODIO_CLIENT_SECRET'),
-                        #     env.get('PODIO_USERNAME'),
-                        #     env.get('PODIO_PASSWORD')
-                        # )
-                        print(message)
-                        return 1
-                    if err.status['status'] == '400':	
-                        if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido."	
-                        elif json.loads(err.content)['error_detail'] == 'user.invalid.username':	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido."	
-                        elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':	
-                            message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido."	
-                        elif json.loads(err.content)['error_detail'] == 'user.invalid.password':	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."	
-                        else:	
-                            message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                                        'password': env.get('PODIO_PASSWORD')})
-                            transport.OAuthToken(resp)
-                            # podio = api.OAuthClient(	
-                            #     env.get('PODIO_CLIENT_ID'),	
-                            #     env.get('PODIO_CLIENT_SECRET'),	
-                            #     env.get('PODIO_USERNAME'),	
-                            #     env.get('PODIO_PASSWORD')	
-                            # )	
-                            print(message)
-                            #return 1
-                    if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-                        message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
-                        print(message)
+                    if handled == 'token_expired':
+                        #return 1
+                        continue
+                    if handled == 'rate_limit':
                         return 2
-                    message = f"{hour.strftime('%H:%M:%S')} -> Erro inesperado na requisição para a API. {err}"
-                    print(message)
                     return 1
         return 0
     return 1
@@ -430,20 +319,9 @@ if __name__ == '__main__':
         )
     # Caso haja erro, provavelmente o token de acesso a API expirou.
     except api.transport.TransportException as err:
-        hour = datetime.datetime.now()
-        message = ""
-        if err.status['status'] == '400':
-            if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
-                message = f"{hour.strftime('%H:%M:%S')} -> Secret inválido. Terminando o programa."
-            elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
-                message = f"{hour.strftime('%H:%M:%S')} -> Usuário inválido. Terminando o programa."
-            elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
-                message = f"{hour.strftime('%H:%M:%S')} -> ID do cliente inválido. Terminando o programa."
-            elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
-                message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido. Terminando o programa."
-        else:
-            message = f"{hour.strftime('%H:%M:%S')} -> Terminando o programa. Erro no acesso a API. {err}"
-        print(message)
+        handled = handling_podio_error(err)
+        if handled == 'status_400':
+            print("Terminando o programa.")
         exit(1)
     else:
         #print(podio)
