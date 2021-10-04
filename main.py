@@ -2,10 +2,11 @@ from os import environ as env
 # Usando a biblioteca de manipulação da API do Podio.
 # Algumas alterações foram feitas para possibilitar a execução deste código
 from pypodio2 import api
+from pypodio2 import transport
 
 import mysql.connector
 import time, datetime
-import json
+import json, requests
 
 def get_all_workspaces(podio):
     # Obtendo informações de todas as organizações que o usuário tem acesso no Podio
@@ -22,12 +23,16 @@ def get_all_workspaces(podio):
         if err.status['status'] == '401':
             # Token expirado. Re-autenticando
             message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-            podio = api.OAuthClient(
-                env.get('PODIO_CLIENT_ID'),
-                env.get('PODIO_CLIENT_SECRET'),
-                env.get('PODIO_USERNAME'),
-                env.get('PODIO_PASSWORD')
-            )
+            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+	                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+	                    'password': env.get('PODIO_PASSWORD')})
+            transport.OAuthToken(resp)
+            # podio = api.OAuthClient(
+            #         env.get('PODIO_CLIENT_ID'),
+            #         env.get('PODIO_CLIENT_SECRET'),
+            #         env.get('PODIO_USERNAME'),
+            #         env.get('PODIO_PASSWORD')
+            # )
             print(message)
             return "token_expirado"
         if err.status['status'] == '400':
@@ -41,12 +46,16 @@ def get_all_workspaces(podio):
                 message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
             else:
                 message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
-                podio = api.OAuthClient(
-                    env.get('PODIO_CLIENT_ID'),
-                    env.get('PODIO_CLIENT_SECRET'),
-                    env.get('PODIO_USERNAME'),
-                    env.get('PODIO_PASSWORD')
-                )	
+                resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+	                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+	                        'password': env.get('PODIO_PASSWORD')})
+                transport.OAuthToken(resp)
+                # podio = api.OAuthClient(
+                #     env.get('PODIO_CLIENT_ID'),
+                #     env.get('PODIO_CLIENT_SECRET'),
+                #     env.get('PODIO_USERNAME'),
+                #     env.get('PODIO_PASSWORD')
+                # )
                 print(message)
                 return "query_nula"
         else:
@@ -133,12 +142,16 @@ def create_tables(podio, cursor):
                         return 2
                     if err.status['status'] == '401':
                         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                        podio = api.OAuthClient(
-                            env.get('PODIO_CLIENT_ID'),
-                            env.get('PODIO_CLIENT_SECRET'),
-                            env.get('PODIO_USERNAME'),
-                            env.get('PODIO_PASSWORD')
-                        )
+                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+	                                'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+	                                'password': env.get('PODIO_PASSWORD')})
+                        transport.OAuthToken(resp)
+                        # podio = api.OAuthClient(
+                        #     env.get('PODIO_CLIENT_ID'),
+                        #     env.get('PODIO_CLIENT_SECRET'),
+                        #     env.get('PODIO_USERNAME'),
+                        #     env.get('PODIO_PASSWORD')
+                        # )
                         print(message)
                         #return 3
                         continue
@@ -153,12 +166,16 @@ def create_tables(podio, cursor):
                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                         else:	
                             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                            podio = api.OAuthClient(	
-                                env.get('PODIO_CLIENT_ID'),	
-                                env.get('PODIO_CLIENT_SECRET'),	
-                                env.get('PODIO_USERNAME'),	
-                                env.get('PODIO_PASSWORD')	
-                            )	
+                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                                        'password': env.get('PODIO_PASSWORD')})
+                            transport.OAuthToken(resp)
+                            # podio = api.OAuthClient(	
+                            #     env.get('PODIO_CLIENT_ID'),	
+                            #     env.get('PODIO_CLIENT_SECRET'),	
+                            #     env.get('PODIO_USERNAME'),	
+                            #     env.get('PODIO_PASSWORD')	
+                            # )	
                             print(message)
                             #return 3
                             continue
@@ -292,12 +309,16 @@ def insert_items(podio, cursor):
                                         return 1
                                     if err.status['status'] == '401':
                                         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                                        podio = api.OAuthClient(
-                                            env.get('PODIO_CLIENT_ID'),
-                                            env.get('PODIO_CLIENT_SECRET'),
-                                            env.get('PODIO_USERNAME'),
-                                            env.get('PODIO_PASSWORD')
-                                        )
+                                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                                                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                                                    'password': env.get('PODIO_PASSWORD')})
+                                        transport.OAuthToken(resp)
+                                        # podio = api.OAuthClient(
+                                        #     env.get('PODIO_CLIENT_ID'),
+                                        #     env.get('PODIO_CLIENT_SECRET'),
+                                        #     env.get('PODIO_USERNAME'),
+                                        #     env.get('PODIO_PASSWORD')
+                                        # )
                                         print(message)
                                         #return 1
                                         continue
@@ -312,12 +333,16 @@ def insert_items(podio, cursor):
                                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
                                         else:	
                                             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                                            podio = api.OAuthClient(	
-                                                env.get('PODIO_CLIENT_ID'),	
-                                                env.get('PODIO_CLIENT_SECRET'),	
-                                                env.get('PODIO_USERNAME'),	
-                                                env.get('PODIO_PASSWORD')	
-                                            )	
+                                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                                                        'password': env.get('PODIO_PASSWORD')})
+                                            transport.OAuthToken(resp)
+                                            # podio = api.OAuthClient(	
+                                            #     env.get('PODIO_CLIENT_ID'),	
+                                            #     env.get('PODIO_CLIENT_SECRET'),	
+                                            #     env.get('PODIO_USERNAME'),	
+                                            #     env.get('PODIO_PASSWORD')	
+                                            # )	
                                             print(message)
                                             return 1
                                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
@@ -340,12 +365,16 @@ def insert_items(podio, cursor):
                         return 1
                     if err.status['status'] == '401':
                         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-                        podio = api.OAuthClient(
-                            env.get('PODIO_CLIENT_ID'),
-                            env.get('PODIO_CLIENT_SECRET'),
-                            env.get('PODIO_USERNAME'),
-                            env.get('PODIO_PASSWORD')
-                        )
+                        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                                    'password': env.get('PODIO_PASSWORD')})
+                        transport.OAuthToken(resp)
+                        # podio = api.OAuthClient(
+                        #     env.get('PODIO_CLIENT_ID'),
+                        #     env.get('PODIO_CLIENT_SECRET'),
+                        #     env.get('PODIO_USERNAME'),
+                        #     env.get('PODIO_PASSWORD')
+                        # )
                         print(message)
                         return 1
                     if err.status['status'] == '400':	
@@ -359,13 +388,17 @@ def insert_items(podio, cursor):
                             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."	
                         else:	
                             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"	
-                            podio = api.OAuthClient(	
-                                env.get('PODIO_CLIENT_ID'),	
-                                env.get('PODIO_CLIENT_SECRET'),	
-                                env.get('PODIO_USERNAME'),	
-                                env.get('PODIO_PASSWORD')	
-                            )	
-                            print(message)	
+                            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                                        'password': env.get('PODIO_PASSWORD')})
+                            transport.OAuthToken(resp)
+                            # podio = api.OAuthClient(	
+                            #     env.get('PODIO_CLIENT_ID'),	
+                            #     env.get('PODIO_CLIENT_SECRET'),	
+                            #     env.get('PODIO_USERNAME'),	
+                            #     env.get('PODIO_PASSWORD')	
+                            # )	
+                            print(message)
                             #return 1
                     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
                         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
