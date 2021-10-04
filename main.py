@@ -21,7 +21,7 @@ def handling_podio_error(err):
         resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
                     'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
                     'password': env.get('PODIO_PASSWORD')})
-        transport.OAuthToken(resp)
+        transport.OAuthToken(resp.json())
         # podio = api.OAuthClient(
         #         env.get('PODIO_CLIENT_ID'),
         #         env.get('PODIO_CLIENT_SECRET'),
@@ -44,7 +44,7 @@ def handling_podio_error(err):
             resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
                         'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
                         'password': env.get('PODIO_PASSWORD')})
-            transport.OAuthToken(resp)
+            transport.OAuthToken(resp.json())
             # podio = api.OAuthClient(
             #     env.get('PODIO_CLIENT_ID'),
             #     env.get('PODIO_CLIENT_SECRET'),
