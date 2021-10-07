@@ -6,7 +6,7 @@ from pypodio2 import transport
 
 import mysql.connector
 import time, datetime
-import json, requests
+import json, requests, re
 
 def handling_podio_error(err):
     hour = datetime.datetime.now()
@@ -122,7 +122,6 @@ def create_tables(podio, cursor):
                             query = ["CREATE TABLE " + table_name, "("]
                             query.append("`id` INTEGER PRIMARY KEY NOT NULL")
                             query.append(", `created_on` DATETIME")
-                            #table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
                                     label = field['label']
@@ -131,7 +130,6 @@ def create_tables(podio, cursor):
                                     if f"`{label}".lower() in "".join(query).lower():
                                         label += str("".join(query).lower().count(f"`{label}".lower())+1)
                                     query.append(f", `{label}` VARCHAR(255)")
-                                    #table_labels.append("`"+label+"`")
                             query.append(")")
 
                             #print(table_name)
