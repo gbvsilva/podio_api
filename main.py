@@ -18,16 +18,16 @@ def handling_podio_error(err):
     if err.status['status'] == '401':
         # Token expirado. Re-autenticando
         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-        resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                    'password': env.get('PODIO_PASSWORD')})
-        transport.OAuthToken(resp.json())
-        # podio = api.OAuthClient(
-        #         env.get('PODIO_CLIENT_ID'),
-        #         env.get('PODIO_CLIENT_SECRET'),
-        #         env.get('PODIO_USERNAME'),
-        #         env.get('PODIO_PASSWORD')
-        # )
+        # resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+        #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+        #             'password': env.get('PODIO_PASSWORD')})
+        # transport.OAuthToken(resp.json())
+        podio = api.OAuthClient(
+            env.get('PODIO_CLIENT_ID'),
+            env.get('PODIO_CLIENT_SECRET'),
+            env.get('PODIO_USERNAME'),
+            env.get('PODIO_PASSWORD')
+        )
         print(message)
         return "token_expired"
     if err.status['status'] == '400':
@@ -41,16 +41,16 @@ def handling_podio_error(err):
             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
-            resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                        'password': env.get('PODIO_PASSWORD')})
-            transport.OAuthToken(resp.json())
-            # podio = api.OAuthClient(
-            #     env.get('PODIO_CLIENT_ID'),
-            #     env.get('PODIO_CLIENT_SECRET'),
-            #     env.get('PODIO_USERNAME'),
-            #     env.get('PODIO_PASSWORD')
-            # )
+            # resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+            #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+            #             'password': env.get('PODIO_PASSWORD')})
+            # transport.OAuthToken(resp.json())
+            podio = api.OAuthClient(
+                env.get('PODIO_CLIENT_ID'),
+                env.get('PODIO_CLIENT_SECRET'),
+                env.get('PODIO_USERNAME'),
+                env.get('PODIO_PASSWORD')
+            )
             print(message)
             return "null_query"
         return "status_400"
@@ -177,7 +177,6 @@ def insert_items(podio, cursor):
                     apps = podio.Application.list_in_space(w.get('space_id'))
                     cursor.execute("SHOW TABLES")
                     tables = cursor.fetchall()
-
                     for app in apps:
                         table_name = app.get('url_label').replace('-', '_')
                         #print(table_name)
