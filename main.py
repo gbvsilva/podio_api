@@ -2,7 +2,7 @@ from os import environ as env
 # Usando a biblioteca de manipulação da API do Podio.
 # Algumas alterações foram feitas para possibilitar a execução deste código
 from pypodio2 import api
-from pypodio2 import transport
+#from pypodio2 import transport
 
 import mysql.connector
 import time, datetime
@@ -18,16 +18,19 @@ def handling_podio_error(err):
     if err.status['status'] == '401':
         # Token expirado. Re-autenticando
         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-        # resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-        #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-        #             'password': env.get('PODIO_PASSWORD')})
-        # transport.OAuthToken(resp.json())
-        podio = api.OAuthClient(
-            env.get('PODIO_CLIENT_ID'),
-            env.get('PODIO_CLIENT_SECRET'),
-            env.get('PODIO_USERNAME'),
-            env.get('PODIO_PASSWORD')
-        )
+        resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                    'password': env.get('PODIO_PASSWORD')})
+        requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                        'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
+        #transport.OAuthToken(resp.json())
+        # podio = api.OAuthClient(
+        #     env.get('PODIO_CLIENT_ID'),
+        #     env.get('PODIO_CLIENT_SECRET'),
+        #     env.get('PODIO_USERNAME'),
+        #     env.get('PODIO_PASSWORD')
+        # )
         print(message)
         return "token_expired"
     if err.status['status'] == '400':
@@ -41,16 +44,19 @@ def handling_podio_error(err):
             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
-            # resp = requests.post('https://podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-            #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-            #             'password': env.get('PODIO_PASSWORD')})
+            resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                        'password': env.get('PODIO_PASSWORD')})
             # transport.OAuthToken(resp.json())
-            podio = api.OAuthClient(
-                env.get('PODIO_CLIENT_ID'),
-                env.get('PODIO_CLIENT_SECRET'),
-                env.get('PODIO_USERNAME'),
-                env.get('PODIO_PASSWORD')
-            )
+            requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
+                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+                        'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
+            # podio = api.OAuthClient(
+            #     env.get('PODIO_CLIENT_ID'),
+            #     env.get('PODIO_CLIENT_SECRET'),
+            #     env.get('PODIO_USERNAME'),
+            #     env.get('PODIO_PASSWORD')
+            # )
             print(message)
             return "null_query"
         return "status_400"
@@ -356,9 +362,9 @@ if __name__ == '__main__':
                         # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração nas próximas 12 horas.
                         now = datetime.datetime.now()
                         hours = now + datetime.timedelta(hours=12)
-                        message = f"Esperando as próximas 12hs às {hours.strftime('%H:%M:%S')}"
+                        message = f"Esperando as próximas 12hs (3s*) às {hours.strftime('%H:%M:%S')}"
                         print(message)
-                        time.sleep(43200)
+                        time.sleep(180)
                     else:
                         message = "Tentando novamente..."
                         print(message)
