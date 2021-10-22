@@ -18,12 +18,12 @@ def handling_podio_error(err):
     if err.status['status'] == '401':
         # Token expirado. Re-autenticando
         message = f"{hour.strftime('%H:%M:%S')} -> Token expirado. Renovando..."
-        resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                    'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                    'password': env.get('PODIO_PASSWORD')})
-        requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                        'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
+        # resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+        #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+        #             'password': env.get('PODIO_PASSWORD')})
+        # requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
+        #                 'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+        #                 'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
         #transport.OAuthToken(resp.json())
         # podio = api.OAuthClient(
         #     env.get('PODIO_CLIENT_ID'),
@@ -44,13 +44,13 @@ def handling_podio_error(err):
             message = f"{hour.strftime('%H:%M:%S')} -> Senha do cliente inválido."
         else:
             message = f"{hour.strftime('%H:%M:%S')} -> Parâmetro nulo na query. {err}"
-            resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                        'password': env.get('PODIO_PASSWORD')})
+            # resp = requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'password', 'client_id': env.get('PODIO_CLIENT_ID'), 
+            #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+            #             'password': env.get('PODIO_PASSWORD')})
             # transport.OAuthToken(resp.json())
-            requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
-                        'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
-                        'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
+            # requests.post('https://api.podio.com/oauth/token', data={'grant_type': 'refresh_token', 'client_id': env.get('PODIO_CLIENT_ID'), 
+            #             'client_secret': env.get('PODIO_CLIENT_SECRET'), 'username': env.get('PODIO_USERNAME'),
+            #             'password': env.get('PODIO_PASSWORD'), 'refresh_token': resp.json()['refresh_token']})
             # podio = api.OAuthClient(
             #     env.get('PODIO_CLIENT_ID'),
             #     env.get('PODIO_CLIENT_SECRET'),
@@ -205,7 +205,7 @@ def insert_items(podio, cursor):
                             number_of_items = podio.Application.get_items(app_info.get('app_id'))['total']
                             if dbcount < number_of_items:
                                 hour = datetime.datetime.now()
-                                message = f"{hour.strftime('%H:%M:%S')} -> {table_name} tem {str(dbcount)} itens no BD e {str(number_of_items)} no Podio."
+                                message = f"{hour.strftime('%H:%M:%S')} -> `{table_name}` tem {str(dbcount)} itens no BD `{db_name}` e {str(number_of_items)} no Podio."
                                 print(message)
                                 # Caso não seja possível inserir items em novas inspeções é necessário excluir a tabela
                                 # recadastrando os dados no Banco
@@ -358,13 +358,33 @@ if __name__ == '__main__':
                         message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
                         print(message)
                         time.sleep(3600)
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
                     elif result == 0:
                         # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração nas próximas 12 horas.
                         now = datetime.datetime.now()
-                        hours = now + datetime.timedelta(hours=12)
-                        message = f"Esperando as próximas 12hs (3s*) às {hours.strftime('%H:%M:%S')}"
+                        hours = now + datetime.timedelta(hours=8)
+                        message = f"Esperando as próximas 8hs às {hours.strftime('%H:%M:%S')}"
                         print(message)
-                        time.sleep(180)
+                        time.sleep(28800)
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
+                        mydb.close()
+                        mydb = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        password=env.get('MYSQL_PASSWORD'),
+                        port=env.get('MYSQL_PORT')
+                        )
+                        cursor = mydb.cursor()
                     else:
                         message = "Tentando novamente..."
                         print(message)
@@ -374,6 +394,12 @@ if __name__ == '__main__':
                     message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
                     print(message)
                     time.sleep(3600)
+                    podio = api.OAuthClient(
+                        client_id,
+                        client_secret,
+                        username,
+                        password
+                    )
                 elif res == 3:
                     message = "Tentando novamente..."
                     print(message)
