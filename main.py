@@ -238,6 +238,8 @@ def insert_items(podio, cursor):
                                                     elif fields[j]['type'] == "date" or fields[j]['type'] == "calculation" and 'start' in \
                                                             fields[j]['values'][0]:
                                                         s += fields[j]['values'][0]['start']
+                                                    elif fields[j]['type'] == "calculation" and 'value' in fields[j]['values'][0]:
+                                                        s += fields[j]['values'][0]['value']
                                                     elif fields[j]['type'] == "money":
                                                         s += fields[j]['values'][0]['currency'] + " " + fields[j]['values'][0]['value']
                                                     elif fields[j]['type'] == "image":
