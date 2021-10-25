@@ -79,7 +79,7 @@ def get_all_workspaces(podio):
         print(message)
         return podio.Space.find_all_for_org(orgs[0]['org_id'])
     except api.transport.TransportException as err:
-         return handling_podio_error(err)
+        return handling_podio_error(err)
 
 
 # Rotina para a criação inicial do banco de dados MySQL.
