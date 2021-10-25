@@ -130,12 +130,12 @@ def create_tables(podio, cursor):
                             query.append(", `created_on` DATETIME")
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label']
+                                    label = field['external_id']
                                     # Alguns campos possuem nomes muito grandes
-                                    label = label[:40].strip()
-                                    if f"`{label}".lower() in "".join(query).lower():
-                                        label += str("".join(query).lower().count(f"`{label}".lower())+1)
-                                    query.append(f", `{label}` VARCHAR(255)")
+                                    label = label[:40]
+                                    if label == "id":
+                                        label += str("".join(query).lower().count(f"`id")+1)
+                                    query.append(f", `{label}` TEXT")
                             query.append(")")
 
                             #print(table_name)
@@ -194,8 +194,8 @@ def insert_items(podio, cursor):
                             table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label']
-                                    label = label[:40].strip()
+                                    label = field['external_id']
+                                    label = label[:40]
                                     table_labels.append("`" + label + "`")
 
                             # Fazendo requisicoes percorrendo todos os dados existentes
@@ -203,9 +203,9 @@ def insert_items(podio, cursor):
                             # Ou seja, a cada passo novo (offset) items são requisitados, com base na
                             # quantidade de items obtidos na última iteração
                             number_of_items = podio.Application.get_items(app_info.get('app_id'))['total']
-                            if dbcount < number_of_items:
+                            if table_name == "cadastro_de_admissao" and dbcount < number_of_items:
                                 hour = datetime.datetime.now()
-                                message = f"{hour.strftime('%H:%M:%S')} -> `{table_name}` tem {str(dbcount)} itens no BD `{db_name}` e {str(number_of_items)} no Podio."
+                                message = f"{hour.strftime('%H:%M:%S')} -> `{table_name}` tem {dbcount} itens no BD `{db_name}` e {number_of_items} no Podio."
                                 print(message)
                                 # Caso não seja possível inserir items em novas inspeções é necessário excluir a tabela
                                 # recadastrando os dados no Banco
@@ -219,13 +219,13 @@ def insert_items(podio, cursor):
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\"" + str(item['created_on']) + "\"", ","])
 
-                                            fields = [x for x in item['fields'] if f"`{x['label'][:40].strip()}`" in table_labels]
+                                            fields = [x for x in item['fields'] if f"`{x['external_id'][:40].strip()}`" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
                                             j = 0
                                             for i in range(len(table_labels)):
                                                 s = "\""
-                                                if j < len(fields) and str("`" + fields[j]['label'][:40].strip() + "`") == table_labels[i]:
+                                                if j < len(fields) and str("`" + fields[j]['external_id'][:40] + "`") == table_labels[i]:
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
                                                         # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
@@ -349,7 +349,7 @@ if __name__ == '__main__':
         else:
             cycle = 1
             while True:
-                message = f"==== Ciclo {str(cycle)} ===="
+                message = f"==== Ciclo {cycle} ===="
                 print(message)
                 res = create_tables(podio, cursor)
                 if res == 0:
