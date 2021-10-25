@@ -133,7 +133,7 @@ def create_tables(podio, cursor):
                                     label = field['external_id']
                                     # Alguns campos possuem nomes muito grandes
                                     label = label[:40]
-                                    if label == "id":
+                                    if "id" in label:
                                         label += str("".join(query).lower().count(f"`id")+1)
                                     query.append(f", `{label}` TEXT")
                             query.append(")")
@@ -203,7 +203,7 @@ def insert_items(podio, cursor):
                             # Ou seja, a cada passo novo (offset) items são requisitados, com base na
                             # quantidade de items obtidos na última iteração
                             number_of_items = podio.Application.get_items(app_info.get('app_id'))['total']
-                            if table_name == "cadastro_de_admissao" and dbcount < number_of_items:
+                            if dbcount < number_of_items:
                                 hour = datetime.datetime.now()
                                 message = f"{hour.strftime('%H:%M:%S')} -> `{table_name}` tem {dbcount} itens no BD `{db_name}` e {number_of_items} no Podio."
                                 print(message)
