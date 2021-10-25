@@ -357,7 +357,7 @@ if __name__ == '__main__':
                     # Caso o limite de requisições seja atingido, espera-se mais 1 hora até a seguinte iteração
                     if result == 2:
                         hour = datetime.datetime.now() + datetime.timedelta(hours=1)
-                        message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
+                        message = f"Esperando a hora seguinte. Até às {hour.strftime('%H:%M:%S')}"
                         print(message)
                         time.sleep(3600)
                         podio = api.OAuthClient(
@@ -366,11 +366,19 @@ if __name__ == '__main__':
                             username,
                             password
                         )
+                        mydb.close()
+                        mydb = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        password=env.get('MYSQL_PASSWORD'),
+                        port=env.get('MYSQL_PORT')
+                        )
+                        cursor = mydb.cursor()
                     elif result == 0:
                         # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração nas próximas 12 horas.
                         now = datetime.datetime.now()
                         hours = now + datetime.timedelta(hours=8)
-                        message = f"Esperando as próximas 8hs às {hours.strftime('%H:%M:%S')}"
+                        message = f"Esperando as próximas 8hs. Até às {hours.strftime('%H:%M:%S')}"
                         print(message)
                         time.sleep(28800)
                         podio = api.OAuthClient(
@@ -393,7 +401,7 @@ if __name__ == '__main__':
                         time.sleep(1)
                 elif res == 2:
                     hour = datetime.datetime.now() + datetime.timedelta(hours=1)
-                    message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
+                    message = f"Esperando a hora seguinte. Até às {hour.strftime('%H:%M:%S')}"
                     print(message)
                     time.sleep(3600)
                     podio = api.OAuthClient(
@@ -402,6 +410,14 @@ if __name__ == '__main__':
                         username,
                         password
                     )
+                    mydb.close()
+                    mydb = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password=env.get('MYSQL_PASSWORD'),
+                    port=env.get('MYSQL_PORT')
+                    )
+                    cursor = mydb.cursor()
                 elif res == 3:
                     message = "Tentando novamente..."
                     print(message)
