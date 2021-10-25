@@ -199,7 +199,7 @@ def insert_items(podio):
                             number_of_items = podio.Application.get_items(app_info.get('app_id'))['total']
                             if dbcount < number_of_items:
                                 hour = datetime.datetime.now()
-                                message = f"{hour.strftime('%H:%M:%S')} -> {table_name} tem {str(dbcount)} itens no BD e {str(number_of_items)} no Podio."
+                                message = f"{hour.strftime('%H:%M:%S')} -> {table_name} tem {dbcount} itens no BD e {number_of_items} no Podio."
                                 print(message)
                                 # Caso não seja possível inserir items em novas inspeções é necessário excluir a tabela
                                 # recadastrando os dados no Banco
@@ -233,6 +233,8 @@ def insert_items(podio):
                                                     elif fields[j]['type'] == "date" or fields[j]['type'] == "calculation" and 'start' in \
                                                             fields[j]['values'][0]:
                                                         s += fields[j]['values'][0]['start']
+                                                    elif fields[j]['type'] == "calculation" and 'value' in fields[j]['values'][0]:	
+                                                        s += fields[j]['values'][0]['value']
                                                     elif fields[j]['type'] == "money":
                                                         s += fields[j]['values'][0]['currency'] + " " + fields[j]['values'][0]['value']
                                                     elif fields[j]['type'] == "image":
@@ -317,8 +319,8 @@ if __name__ == '__main__':
         )
     # Caso haja erro, provavelmente o token de acesso a API expirou.
     except api.transport.TransportException as err:
-        handled = handling_podio_error(err)	
-        if handled == 'status_400':	
+        handled = handling_podio_error(err)
+        if handled == 'status_400':
             print("Terminando o programa.")
         exit(1)
     else:
@@ -326,7 +328,7 @@ if __name__ == '__main__':
         #print(workspaces)
         cycle = 1
         while True:
-            message = f"==== Ciclo {str(cycle)} ===="
+            message = f"==== Ciclo {cycle} ===="
             print(message)
             res = create_tables(podio)
             if res == 0:
@@ -354,8 +356,8 @@ if __name__ == '__main__':
                 print(message)
                 time.sleep(3600)
             elif res == 3:
-                message = "Tentando novamente..."	
-                print(message)	
+                message = "Tentando novamente..."
+                print(message)
                 time.sleep(1)
             else:
                 hour = datetime.datetime.now()
