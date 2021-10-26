@@ -68,7 +68,7 @@ def create_tables(podio):
     if type(workspaces) is list:
         # Acessando o BD para armazenar os dados das workspaces nele
         # Verificando se as workspaces ja estão armazenadas no BD como databases. Se não, executar a criação
-        mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'))
+        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         cursor.execute(sql.SQL("SELECT * FROM pg_catalog.pg_database"))
@@ -92,7 +92,7 @@ def create_tables(podio):
             databases = cursor.fetchall()
             databases = [x[1] for x in databases]
             if db_name in databases:
-                mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'), dbname=db_name)
+                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
                 mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
                 cursor = mydb.cursor()
                 try:
@@ -115,11 +115,11 @@ def create_tables(podio):
                             #table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label']
+                                    label = field['external_id']
                                     # Alguns campos possuem nomes muito grandes
-                                    label = label[:40].strip()
-                                    if f"\"{label}".lower() in "".join(query).lower():
-                                        label += str("".join(query).lower().count(f"\"{label}".lower())+1)
+                                    label = label[:40]
+                                    if "id" in label:	
+                                        label += str("".join(query).lower().count(f"\"id")+1)
                                     query.append(f", \"{label}\" TEXT")
                                     #table_labels.append("\""+label+"\"")
                             query.append(")")
@@ -142,8 +142,9 @@ def create_tables(podio):
                     print(message)
                 except api.transport.TransportException as err:
                     handled = handling_podio_error(err)
-                    if handled == 'token_expired' or handled == 'status_400' or handled == 'not_known_yet':
-                        #return 3
+                    if handled == 'token_expired':
+                        return 3
+                    if handled == 'status_400' or handled == 'not_known_yet':
                         continue
         return 0
     #return 1
@@ -158,7 +159,7 @@ def insert_items(podio):
     if workspaces == 'token_expired' or workspaces == 'null_query':
         return 1
     if type(workspaces) is list:
-        mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'))
+        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         cursor.execute(sql.SQL("SELECT * FROM pg_catalog.pg_database"))
@@ -168,7 +169,7 @@ def insert_items(podio):
             db_name = w.get('url_label').replace("-", "_")
             if db_name in databases:
                 #print(db_name)
-                mydb = psycopg2.connect(host="localhost", user="postgres", password=env.get('POSTGRES_PASSWORD'), dbname=db_name)
+                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
                 mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
                 cursor = mydb.cursor()
                 try:
@@ -188,8 +189,8 @@ def insert_items(podio):
                             table_labels = []
                             for field in app_info.get('fields'):
                                 if field['status'] == "active":
-                                    label = field['label']
-                                    label = label[:40].strip()
+                                    label = field['external_id']
+                                    label = label[:40]
                                     table_labels.append("\"" + label + "\"")
 
                             # Fazendo requisicoes percorrendo todos os dados existentes
@@ -213,14 +214,13 @@ def insert_items(podio):
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\'" + str(item['created_on'].split()[0]) + "\'", \
                                                           ",\'" + str(item['created_on']).split()[1] + "\',"])
-                                            fields = [x for x in item['fields'] if f"\"{x['label'][:40].strip()}\"" in table_labels]
+                                            fields = [x for x in item['fields'] if f"\"{x['external_id'][:40]}\"" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
                                             j = 0
                                             for i in range(len(table_labels)):
                                                 s = "\'"
-                                                if j < len(fields) and str("\"" + fields[j]['label'][:40].strip() + "\"") == table_labels[i]:
-                                                    # print(str("`" + fields[j]['label'][:40] + "`").lower(), table_labels[i].lower())
+                                                if j < len(fields) and str("\"" + fields[j]['external_id'][:40] + "\"") == table_labels[i]:
                                                     # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
                                                     if fields[j]['type'] == "contact":
                                                         # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
@@ -271,11 +271,8 @@ def insert_items(podio):
                                                 return 1
                                 except api.transport.TransportException as err:
                                     handled = handling_podio_error(err)
-                                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400':
+                                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400' or handled == 'token_expired':
                                         return 1
-                                    if handled == 'token_expired':
-                                        #return 1
-                                        continue
                                     if handled == 'rate_limit':
                                         return 2
                             elif dbcount > number_of_items:
@@ -288,11 +285,8 @@ def insert_items(podio):
 
                 except api.transport.TransportException as err:
                     handled = handling_podio_error(err)	
-                    if handled == 'status_504' or handled == 'status_400':
+                    if handled == 'status_504' or handled == 'status_400' or handled == 'token_expired':
                         return 1
-                    if handled == 'token_expired':
-                        #return 1
-                        continue
                     if handled == 'rate_limit':
                         return 2
                     return 1
@@ -336,28 +330,58 @@ if __name__ == '__main__':
                 # Caso o limite de requisições seja atingido, espera-se mais 1 hora até a seguinte iteração
                 if result == 2:
                     hour = datetime.datetime.now() + datetime.timedelta(hours=1)
-                    message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
+                    message = f"Esperando a hora seguinte. Até às {hour.strftime('%H:%M:%S')}"
                     print(message)
                     time.sleep(3600)
+                    podio = api.OAuthClient(	
+                        client_id,	
+                        client_secret,	
+                        username,	
+                        password	
+                    )
                 elif result == 0:
                     # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     now = datetime.datetime.now()
                     hours = now + datetime.timedelta(hours=12)
-                    message = f"Esperando as próximas 12hs às {hours.strftime('%H:%M:%S')}"
+                    message = f"Esperando as próximas 8hs. Até às {hours.strftime('%H:%M:%S')}"
                     print(message)
-                    time.sleep(43200)
+                    time.sleep(28800)
+                    podio = api.OAuthClient(	
+                        client_id,	
+                        client_secret,	
+                        username,	
+                        password	
+                    )
                 else:
                     message = "Tentando novamente..."
                     print(message)
+                    podio = api.OAuthClient(	
+                        client_id,	
+                        client_secret,	
+                        username,	
+                        password	
+                    )
                     time.sleep(1)
             elif res == 2:
                 hour = datetime.datetime.now() + datetime.timedelta(hours=1)
                 message = f"Esperando a hora seguinte às {hour.strftime('%H:%M:%S')}"
                 print(message)
                 time.sleep(3600)
+                podio = api.OAuthClient(	
+                    client_id,	
+                    client_secret,	
+                    username,	
+                    password	
+                )
             elif res == 3:
                 message = "Tentando novamente..."
                 print(message)
+                podio = api.OAuthClient(	
+                    client_id,	
+                    client_secret,	
+                    username,	
+                    password	
+                )
                 time.sleep(1)
             else:
                 hour = datetime.datetime.now()
