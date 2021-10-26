@@ -11,7 +11,7 @@ from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 def handling_podio_error(err):	
-    hour = datetime.datetime.now()	
+    hour = datetime.datetime.now()
     message = ""
     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
         message = f"{hour.strftime('%H:%M:%S')} -> Quantidade de requisições chegou ao limite por hora."
