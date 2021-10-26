@@ -155,8 +155,9 @@ def create_tables(podio, cursor):
                     print(message)
                 except api.transport.TransportException as err:
                     handled = handling_podio_error(err)
-                    if handled == 'token_expired' or handled == 'status_400' or handled == 'not_known_yet':
-                        #return 3
+                    if handled == 'token_expired':
+                        return 3
+                    if handled == 'status_400' or handled == 'not_known_yet':
                         continue
         return 0
     #return 1
@@ -219,7 +220,7 @@ def insert_items(podio, cursor):
                                             query = ["INSERT INTO " + table_name, " VALUES", "("]
                                             query.extend([str(item['item_id']), ",", "\"" + str(item['created_on']) + "\"", ","])
 
-                                            fields = [x for x in item['fields'] if f"`{x['external_id'][:40].strip()}`" in table_labels]
+                                            fields = [x for x in item['fields'] if f"`{x['external_id'][:40]}`" in table_labels]
                                             # Fazendo a comparação entre os campos existentes e os preenchidos
                                             # Caso o campo esteja em branco no Podio, preencher com '?'
                                             j = 0
@@ -276,11 +277,8 @@ def insert_items(podio, cursor):
                                                 return 1
                                 except api.transport.TransportException as err:
                                     handled = handling_podio_error(err)
-                                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400':
+                                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400' or handled == 'token_expired':
                                         return 1
-                                    if handled == 'token_expired':
-                                        #return 1
-                                        continue
                                     if handled == 'rate_limit':
                                         return 2
                             elif dbcount > number_of_items:
@@ -293,11 +291,8 @@ def insert_items(podio, cursor):
 
                 except api.transport.TransportException as err:
                     handled = handling_podio_error(err)
-                    if handled == 'status_504' or handled == 'status_400':
+                    if handled == 'status_504' or handled == 'status_400' or handled == 'token_expired':
                         return 1
-                    if handled == 'token_expired':
-                        #return 1
-                        continue
                     if handled == 'rate_limit':
                         return 2
                     return 1
@@ -397,6 +392,12 @@ if __name__ == '__main__':
                         cursor = mydb.cursor()
                     else:
                         message = "Tentando novamente..."
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
                         print(message)
                         time.sleep(1)
                 elif res == 2:
@@ -420,6 +421,12 @@ if __name__ == '__main__':
                     cursor = mydb.cursor()
                 elif res == 3:
                     message = "Tentando novamente..."
+                    podio = api.OAuthClient(
+                        client_id,
+                        client_secret,
+                        username,
+                        password
+                    )
                     print(message)
                     time.sleep(1)
                 else:
