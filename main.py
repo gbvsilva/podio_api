@@ -71,7 +71,7 @@ def create_tables(podio):
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         for w in workspaces:
-            db_name = w.get('url_label')
+            db_name = w.get('url_label').replace('-', '_')
             # Criando as tabelas para cada database criado acima
             try:
                 apps = podio.Application.list_in_space(w.get('space_id'))
@@ -81,8 +81,8 @@ def create_tables(podio):
                 #print(db_name,tables)
                 for app in apps:
                     #print(app)
-                    table_name = app.get('url_label')
-                    table_name = db_name+"_"+table_name
+                    table_name = app.get('url_label').replace('-', '_')
+                    table_name = db_name+"__"+table_name
                     if app.get('status') == "active" and (table_name,) not in tables:
                         #print(table_name)
                         app_info = podio.Application.find(app.get('app_id'))
@@ -143,14 +143,14 @@ def insert_items(podio):
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         for w in workspaces:
-            db_name = w.get('url_label')
+            db_name = w.get('url_label').replace('-', '_')
             try:
                 apps = podio.Application.list_in_space(w.get('space_id'))
                 cursor.execute(sql.SQL("SELECT table_name FROM information_schema.tables WHERE table_schema = 'podio' ORDER BY table_name;"))
                 tables = cursor.fetchall()
                 for app in apps:
-                    table_name = app.get('url_label')
-                    table_name = db_name+"_"+table_name
+                    table_name = app.get('url_label').replace('-', '_')
+                    table_name = db_name+"__"+table_name
                     #print(table_name)
                     if (table_name,) in tables:
                         app_info = podio.Application.find(app.get('app_id'))
