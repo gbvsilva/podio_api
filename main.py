@@ -139,7 +139,7 @@ def insert_items(podio):
     if workspaces == 'token_expired' or workspaces == 'null_query':
         return 1
     if type(workspaces) is list:
-        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=db_name)
+        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=env.get('POSTGRES_DATABASE'))
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         for w in workspaces:
