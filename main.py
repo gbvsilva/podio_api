@@ -92,7 +92,7 @@ def create_tables(podio):
             databases = cursor.fetchall()
             databases = [x[1] for x in databases]
             if db_name in databases:
-                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
+                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=db_name)
                 mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
                 cursor = mydb.cursor()
                 try:
@@ -146,6 +146,7 @@ def create_tables(podio):
                         return 3
                     if handled == 'status_400' or handled == 'not_known_yet':
                         continue
+                mydb.close()
         return 0
     #return 1
     # Não parando o fluxo
@@ -169,7 +170,7 @@ def insert_items(podio):
             db_name = w.get('url_label').replace("-", "_")
             if db_name in databases:
                 #print(db_name)
-                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'))
+                mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=db_name)
                 mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
                 cursor = mydb.cursor()
                 try:
@@ -290,6 +291,7 @@ def insert_items(podio):
                     if handled == 'rate_limit':
                         return 2
                     return 1
+                mydb.close()
         return 0
     return 1
 
