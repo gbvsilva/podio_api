@@ -315,7 +315,7 @@ if __name__ == '__main__':
                 elif result == 0:
                     # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     now = datetime.datetime.now()
-                    hours = now + datetime.timedelta(hours=12)
+                    hours = now + datetime.timedelta(hours=8)
                     message = f"Esperando as próximas 8hs. Até às {hours.strftime('%H:%M:%S')}"
                     print(message)
                     time.sleep(28800)
