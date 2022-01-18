@@ -327,8 +327,8 @@ if __name__ == '__main__':
         try:
             # Acessando o BD para armazenar os dados das workspaces nele
             mydb = mysql.connector.connect(
-                host="localhost",
-                user="root",
+                host=env.get('MYSQL_HOST'),
+                user=env.get('MYSQL_USER'),
                 password=env.get('MYSQL_PASSWORD'),
                 port=env.get('MYSQL_PORT')
             )
