@@ -5,7 +5,7 @@ from pypodio2 import api
 
 import mysql.connector
 import time, datetime
-import json, requests
+import json
 
 def handling_podio_error(err):
     hour = datetime.datetime.now()
