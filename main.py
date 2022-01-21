@@ -4,7 +4,7 @@ from os import environ as env
 from pypodio2 import api
 
 import time, datetime
-import json, requests
+import json
 
 import psycopg2
 from psycopg2 import sql
@@ -67,7 +67,7 @@ def create_tables(podio):
         return 2
     if type(workspaces) is list:
         # Acessando o BD
-        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=env.get('POSTGRES_DATABASE'))
+        mydb = psycopg2.connect(host=env.get('POSTGRES_HOST'), user=env.get('POSTGRES_USERNAME'), password=env.get('POSTGRES_PASSWORD'), dbname=env.get('POSTGRES_DATABASE'), port=env.get('POSTGRES_PORT'))
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = mydb.cursor()
         for w in workspaces:
