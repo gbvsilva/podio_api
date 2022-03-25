@@ -1,0 +1,52 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ENV for Graco",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "PODIO_CLIENT_ID": "testes-com-api",
+                "PODIO_CLIENT_SECRET": "7FzNMD4CyoMyvRgUZPW84rgLQsMWSrDnQQoD2eDz5Y2Fa6TyQGvct9vhLLajox6L",
+                "PODIO_USERNAME": "graco.silva@gentilnegocios.com.br",
+                "PODIO_PASSWORD": "loCaL12@d",
+                "MYSQL_HOST": "localhost",
+                "MYSQL_USER": "root",
+                "MYSQL_PASSWORD": "",
+                "MYSQL_PORT": "3306",
+                "POSTGRES_HOST": "10.0.20.8",
+                "POSTGRES_USERNAME": "ti_gentil",
+                "POSTGRES_PASSWORD": "gentil@2021",
+                "POSTGRES_DATABASE": "gentil_dl",
+                "POSTGRES_PORT": "5432"
+            }
+        },
+        {
+            "name": "ENV for TEX",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "PODIO_CLIENT_ID": "teste-com-api",
+                "PODIO_CLIENT_SECRET": "EjsttjGmTHYRI6MntLq7bbWCWZPW5gtemdBiGRwBsC9dWUlrCnjsLXY6eHvpSvpR",
+                "PODIO_USERNAME": "bi@gentilnegocios.com.br",
+                "PODIO_PASSWORD": "+P0d1o*2021gn",
+                "MYSQL_HOST": "localhost",
+                "MYSQL_USER": "root",
+                "MYSQL_PASSWORD": "",
+                "MYSQL_PORT": "3306",
+                "POSTGRES_HOST": "10.0.20.8",
+                "POSTGRES_USERNAME": "ti_gentil",
+                "POSTGRES_PASSWORD": "gentil@2021",
+                "POSTGRES_DATABASE": "gentil_dl",
+                "POSTGRES_PORT": "5432"
+            }
+        }
+    ]
+}
