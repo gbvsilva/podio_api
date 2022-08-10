@@ -52,7 +52,7 @@ def insertItems(podio, apps_ids):
                             items = filteredItems.get('items')
                             for item in items:
                                 query = [f"INSERT INTO podio.{tableName}", " VALUES", "("]
-                                query.extend([str(item['item_id']), ",", "\'" + str(item['created_on']) + "\',"])
+                                query.extend(["'"+str(item['item_id'])+"'", ",", "'" + str(item['created_on']) + "',"])
                                 fields = [x for x in item['fields'] if f"\"{x['external_id'][:40]}\"" in tableLabels]
                                 # Fazendo a comparação entre os campos existentes e os preenchidos
                                 # Caso o campo esteja em branco no Podio, preencher com '?'

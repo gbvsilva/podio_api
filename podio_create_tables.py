@@ -26,7 +26,7 @@ def createTables(podio, apps_ids):
             tableName = spaceName+"__"+appName
             if appInfo.get('status') == "active" and (tableName,) not in tables:
                 query = [f"CREATE TABLE IF NOT EXISTS podio.{tableName}", "("]
-                query.append("\"id\" INTEGER PRIMARY KEY NOT NULL")
+                query.append("\"id\" TEXT PRIMARY KEY NOT NULL")
                 query.append(", \"created_on\" TIMESTAMP")
 
                 for field in appInfo.get('fields'):
