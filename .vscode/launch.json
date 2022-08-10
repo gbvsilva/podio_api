@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "envFile": "/home/graco.silva/git/env-fles/podio-api/env.graco"
+            "envFile": "/home/graco.silva/git/env-files/podio-api/env.graco"
         },
         {
             "name": "ENV for BI",
@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "envFile": "/home/graco.silva/git/env-fles/podio-api/env.bi"
+            "envFile": "/home/graco.silva/git/env-files/podio-api/env.bi"
         }
     ]
 }
