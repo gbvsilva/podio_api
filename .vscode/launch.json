@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ENV for Graco",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "envFile": "/home/graco.silva/git/env-fles/podio-api/env.graco"
+        },
+        {
+            "name": "ENV for BI",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "envFile": "/home/graco.silva/git/env-fles/podio-api/env.bi"
+        }
+    ]
+}
