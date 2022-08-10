@@ -60,7 +60,5 @@ def createTables(podio, apps_ids):
                 return 3
             if handled == 'status_400' or handled == 'not_known_yet':
                 continue
-        mydb.close()
-        return 0
-    # Não parando o fluxo main
-    return 3
+    mydb.close()
+    return 0
