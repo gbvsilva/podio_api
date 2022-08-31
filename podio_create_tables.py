@@ -29,6 +29,7 @@ def createTables(podio, apps_ids):
                 query = ["CREATE TABLE " + tableName, "("]
                 query.append("`id` VARCHAR(255) PRIMARY KEY NOT NULL")
                 query.append(", `created_on` DATETIME")
+                query.append(", `last_event_on` DATETIME")
 
                 for field in appInfo.get('fields'):
                     if field['status'] == "active":

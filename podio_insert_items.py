@@ -1,3 +1,4 @@
+import datetime
 from get_time import getHour
 
 from mysql.connector import Error as dbError
@@ -11,7 +12,7 @@ from podio_tools import handlingPodioError, getFieldValues
 # Retorna 2 caso seja atingido o limite de requisições por hora
 def insertItems(podio, apps_ids):
     mydb = getDB()
-    cursor = mydb.cursor()
+    cursor = mydb.cursor(buffered=True)
     cursor.execute("USE podio")
     for app_id in apps_ids:
         try:
@@ -23,9 +24,6 @@ def insertItems(podio, apps_ids):
             tableName = spaceName+"__"+appName
             
             if (tableName,) in tables:
-                cursor.execute("SELECT COUNT(id) FROM "+tableName)
-                dbCount = cursor.fetchall()[0][0]
-
                 tableLabels = []
                 for field in appInfo.get('fields'):
                     if field['status'] == "active":
@@ -38,60 +36,62 @@ def insertItems(podio, apps_ids):
                 # Ou seja, a cada passo novo (offset) items são requisitados, com base na
                 # quantidade de items obtidos na última iteração
                 numberOfItems = podio.Application.get_items(appInfo.get('app_id'))['total']
-                if dbCount < numberOfItems:
-                    hour = getHour()
-                    message = f"{hour} -> {tableName} tem {dbCount} itens no BD e {numberOfItems} no Podio."
-                    print(message)
-                    # Caso não seja possível inserir items em novas inspeções é necessário excluir a tabela
-                    # recadastrando os dados no Banco
-                    try:
-                        for step in range(dbCount, numberOfItems, 500):
-                            # O valor padrão do offset é 0 de acordo com a documentação da API.
-                            # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                            filteredItems = podio.Item.filter(appInfo.get('app_id'), 
-                                            {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
-                            items = filteredItems.get('items')
-                            for item in items:
-                                query = ["INSERT INTO " + tableName, " VALUES", "("]
-                                query.extend(["'"+str(item['item_id'])+"'", ",", "'" + str(item['created_on']) + "'", ","])
-                                fields = [x for x in item['fields'] if f"`{x['external_id'][:40]}`" in tableLabels]
-                                # Fazendo a comparação entre os campos existentes e os preenchidos
-                                # Caso o campo esteja em branco no Podio, preencher com '?'
-                                j = 0
-                                for i in range(len(tableLabels)):
-                                    if j < len(fields) and str("`" + fields[j]['external_id'][:40] + "`") == tableLabels[i]:
-                                        values = getFieldValues(fields[j])
-                                        j += 1
-                                    else:
-                                        values = "''"
-                                    query.append(values)
-                                    query.append(",")
-                                query.pop()
-                                query.append(")")
-                                try:
-                                    cursor.execute("".join(query))
-                                    hour = getHour()
-                                    message = f"{hour} -> {''.join(query)}"
-                                    print(message)
-                                    mydb.commit()
-                                except dbError as err:
-                                    hour = getHour()
-                                    message = f"{hour} -> Aplicativo alterado. Excluindo a tabela \"{tableName}\". {err}"
-                                    print(message)
-                                    cursor.execute("DROP TABLE "+tableName)
-                                    return 1
-                    except TransportException as err:
-                        handled = handlingPodioError(err)
-                        if handled == 'status_504' or handled == 'null_query' or handled == 'status_400' or handled == 'token_expired':
-                            return 1
-                        if handled == 'rate_limit':
-                            return 2
-                elif dbCount > numberOfItems:
-                    hour = getHour()
-                    message = f"{hour} -> Itens excluídos do Podio. Excluindo a tabela `{tableName}` do BD e recriando-a."
-                    print(message)
-                    cursor.execute("DROP TABLE " + tableName)
-                    continue
+                try:
+                    for step in range(0, numberOfItems, 500):
+                        # O valor padrão do offset é 0 de acordo com a documentação da API.
+                        # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
+                        filteredItems = podio.Item.filter(appInfo.get('app_id'), 
+                                        {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
+                        items = filteredItems.get('items')
+                        for item in items:
+                            # Buscando a última atualização do Item no banco	
+                            cursor.execute(f"SELECT \"last_event_on\" FROM {tableName} WHERE id='{item['item_id']}'")	
+                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'], 	
+                                                    "%Y-%m-%d %H:%M:%S")
+                            if cursor.rowcount > 0:	
+                                last_event_on_db = cursor.fetchone()[0]	
+                    	
+                                if last_event_on_podio > last_event_on_db:	
+                                    hour = getHour()	
+                                    message = f"{hour} -> Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"	
+                                    print(message)	
+                                    cursor.execute(f"DELETE FROM {tableName} WHERE id='{item['item_id']}'")	
+                            if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:	
+                                query = [f"INSERT INTO {tableName}", " VALUES", "("]	
+                                query.extend([f"'{str(item['item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
+
+                            fields = [x for x in item['fields'] if f"`{x['external_id'][:40]}`" in tableLabels]
+                            # Fazendo a comparação entre os campos existentes e os preenchidos
+                            # Caso o campo esteja em branco no Podio, preencher com '?'
+                            j = 0
+                            for i in range(len(tableLabels)):
+                                if j < len(fields) and str("`" + fields[j]['external_id'][:40] + "`") == tableLabels[i]:
+                                    values = getFieldValues(fields[j])
+                                    j += 1
+                                else:
+                                    values = "''"
+                                query.append(values)
+                                query.append(",")
+                            query.pop()
+                            query.append(")")
+                            try:
+                                cursor.execute("".join(query))
+                                hour = getHour()
+                                message = f"{hour} -> {''.join(query)}"
+                                print(message)
+                                mydb.commit()
+                            except dbError as err:
+                                hour = getHour()
+                                message = f"{hour} -> Aplicativo alterado. Excluindo a tabela \"{tableName}\". {err}"
+                                print(message)
+                                cursor.execute("DROP TABLE "+tableName)
+                                return 1
+                except TransportException as err:
+                    handled = handlingPodioError(err)
+                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400' or handled == 'token_expired':
+                        return 1
+                    if handled == 'rate_limit':
+                        return 2
 
         except TransportException as err:
             handled = handlingPodioError(err)	
