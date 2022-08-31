@@ -28,6 +28,7 @@ def createTables(podio, apps_ids):
                 query = [f"CREATE TABLE IF NOT EXISTS podio.{tableName}", "("]
                 query.append("\"id\" TEXT PRIMARY KEY NOT NULL")
                 query.append(", \"created_on\" TIMESTAMP")
+                query.append(", \"last_event_on\" TIMESTAMP")
 
                 for field in appInfo.get('fields'):
                     if field['status'] == "active":
