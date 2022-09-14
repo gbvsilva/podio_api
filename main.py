@@ -45,11 +45,11 @@ if __name__ == '__main__':
         while True:
             message = f"==== Ciclo {cycle} ===="
             print(message)
-            res = createTables(podio, apps_ids)
-            if res == 0:
-                result = insertItems(podio, apps_ids)
+            creation = createTables(podio, apps_ids)
+            if creation == 0:
+                insertion = insertItems(podio, apps_ids)
                 # Caso o limite de requisições seja atingido, espera-se mais 1 hora até a seguinte iteração
-                if result == 2:
+                if insertion == 2:
                     hour = getHour(hours=1)
                     message = f"Esperando a hora seguinte. Até às {hour}"
                     print(message)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                         username,	
                         password	
                     )
-                elif result == 0:
+                elif insertion == 0:
                     # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     hours = getHour(hours=8)
                     message = f"Esperando as próximas {timeOffset//3600}hs. Até às {hours}"
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                         password	
                     )
                     time.sleep(1)
-            elif res == 2:
+            elif creation == 2:
                 hour = getHour(hours=1)
                 message = f"Esperando a hora seguinte às {hour}"
                 print(message)
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                     username,	
                     password	
                 )
-            elif res == 3:
+            elif creation == 3:
                 message = "Tentando novamente..."
                 print(message)
                 podio = api.OAuthClient(	
