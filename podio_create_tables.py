@@ -35,7 +35,7 @@ def createTables(podio, apps_ids):
                         label = field['external_id']
                         # Alguns campos possuem nomes muito grandes
                         label = label[:40]
-                        if "id" in label:	
+                        if "id" in label:
                             label += str("".join(query).lower().count(f"\"id")+1)
                         query.append(f", \"{label}\" TEXT")
                 query.append(")")

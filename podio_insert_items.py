@@ -21,7 +21,7 @@ def insertItems(podio, apps_ids):
             cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'podio' ORDER BY table_name;")
             tables = cursor.fetchall()
             tableName = spaceName+"__"+appName
-            
+
             if (tableName,) in tables:
                 tableLabels = []
                 for field in appInfo.get('fields'):
@@ -39,17 +39,17 @@ def insertItems(podio, apps_ids):
                     for step in range(0, numberOfItems, 500):
                         # O valor padrão do offset é 0 de acordo com a documentação da API.
                         # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                        filteredItems = podio.Item.filter(appInfo.get('app_id'), 
+                        filteredItems = podio.Item.filter(appInfo.get('app_id'),
                                         {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
                         items = filteredItems.get('items')
                         for item in items:
                              # Buscando a última atualização do Item no banco
                             cursor.execute(f"SELECT \"last_event_on\" FROM podio.{tableName} WHERE id='{item['item_id']}'")
-                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'], 
+                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
                                                     "%Y-%m-%d %H:%M:%S")
                             if cursor.rowcount > 0:
                                 last_event_on_db = cursor.fetchone()[0]
-                    
+
                                 if last_event_on_podio > last_event_on_db:
                                     hour = getHour()
                                     message = f"{hour} -> Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"
@@ -94,7 +94,7 @@ def insertItems(podio, apps_ids):
                         return 2
 
         except TransportException as err:
-            handled = handlingPodioError(err)	
+            handled = handlingPodioError(err)
             if handled == 'status_504' or handled == 'status_400' or handled == 'token_expired':
                 return 1
             if handled == 'rate_limit':

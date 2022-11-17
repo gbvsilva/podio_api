@@ -8,11 +8,12 @@ from telegram_tools import sendToBot
 def getDB():
     try:
         mydb = psycopg2.connect(
-                    host=env.get('POSTGRES_HOST'), 
-                    user=env.get('POSTGRES_USERNAME'), 
-                    password=env.get('POSTGRES_PASSWORD'), 
-                    dbname=env.get('POSTGRES_DATABASE'), 
-                    port=env.get('POSTGRES_PORT'))
+            host=env.get('POSTGRES_HOST'),
+            user=env.get('POSTGRES_USERNAME'),
+            password=env.get('POSTGRES_PASSWORD'),
+            dbname=env.get('POSTGRES_DATABASE'),
+            port=env.get('POSTGRES_PORT')
+        )
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     except psycopg2.Error as err:
         # Inatividade do banco ou credenciais inválidas
