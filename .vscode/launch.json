@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -10,7 +7,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "envFile": "/home/graco.silva/git/env-files/podio_api/env.graco"
+            "envFile": "${env:HOME}/git/env-files/all/podio_api_graco_vscode.env"
         },
         {
             "name": "ENV for BI",
@@ -18,7 +15,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "envFile": "/home/graco.silva/git/env-files/podio_api/env.bi"
+            "envFile": "${env:HOME}/git/env-files/all/podio_api_vscode.env"
         }
     ]
 }
