@@ -22,7 +22,7 @@ def insertItems(podio, apps_ids):
             cursor.execute("SHOW TABLES")
             tables = cursor.fetchall()
             tableName = spaceName+"__"+appName
-            
+
             if (tableName,) in tables:
                 tableLabels = []
                 for field in appInfo.get('fields'):
@@ -40,24 +40,24 @@ def insertItems(podio, apps_ids):
                     for step in range(0, numberOfItems, 500):
                         # O valor padrão do offset é 0 de acordo com a documentação da API.
                         # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                        filteredItems = podio.Item.filter(appInfo.get('app_id'), 
+                        filteredItems = podio.Item.filter(appInfo.get('app_id'),
                                         {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
                         items = filteredItems.get('items')
                         for item in items:
-                            # Buscando a última atualização do Item no banco	
-                            cursor.execute(f"SELECT `last_event_on` FROM {tableName} WHERE `id`='{item['item_id']}'")	
-                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'], 	
+                            # Buscando a última atualização do Item no banco
+                            cursor.execute(f"SELECT `last_event_on` FROM {tableName} WHERE `id`='{item['item_id']}'")
+                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
                                                     "%Y-%m-%d %H:%M:%S")
-                            if cursor.rowcount > 0:	
+                            if cursor.rowcount > 0:
                                 last_event_on_db = cursor.fetchone()[0]
-                    	
-                                if last_event_on_podio > last_event_on_db:	
-                                    hour = getHour()	
-                                    message = f"{hour} -> Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"	
-                                    print(message)	
-                                    cursor.execute(f"DELETE FROM {tableName} WHERE id='{item['item_id']}'")	
-                            if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:	
-                                query = [f"INSERT INTO {tableName}", " VALUES", "("]	
+
+                                if last_event_on_podio > last_event_on_db:
+                                    hour = getHour()
+                                    message = f"{hour} -> Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"
+                                    print(message)
+                                    cursor.execute(f"DELETE FROM {tableName} WHERE id='{item['item_id']}'")
+                            if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:
+                                query = [f"INSERT INTO {tableName}", " VALUES", "("]
                                 query.extend([f"'{str(item['item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
 
                             fields = [x for x in item['fields'] if f"`{x['external_id'][:40]}`" in tableLabels]
@@ -94,7 +94,7 @@ def insertItems(podio, apps_ids):
                         return 2
 
         except TransportException as err:
-            handled = handlingPodioError(err)	
+            handled = handlingPodioError(err)
             if handled == 'status_504' or handled == 'status_400' or handled == 'token_expired':
                 return 1
             if handled == 'rate_limit':
