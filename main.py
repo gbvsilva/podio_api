@@ -57,54 +57,74 @@ if __name__ == '__main__':
                     message = f"Esperando a hora seguinte. Até às {hour}"
                     print(message)
                     time.sleep(3600)
-                    podio = api.OAuthClient(
-                        client_id,
-                        client_secret,
-                        username,
-                        password
-                    )
+                    try:
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
+                    except:
+                        message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
+                        print(message)
                 elif result == 0:
                     # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     hours = getHour(hours=8)
                     message = f"Esperando as próximas {timeOffset//3600}hs. Até às {hours}"
                     print(message)
                     time.sleep(timeOffset)
-                    podio = api.OAuthClient(
-                        client_id,
-                        client_secret,
-                        username,
-                        password
-                    )
+                    try:
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
+                    except:
+                        message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
+                        print(message)
                 else:
                     message = "Tentando novamente..."
                     print(message)
-                    podio = api.OAuthClient(
-                        client_id,
-                        client_secret,
-                        username,
-                        password
-                    )
+                    try:
+                        podio = api.OAuthClient(
+                            client_id,
+                            client_secret,
+                            username,
+                            password
+                        )
+                    except:
+                        message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
+                        print(message)
                     time.sleep(1)
             elif res == 2:
                 hour = getHour(hours=1)
                 message = f"Esperando a hora seguinte às {hour}"
                 print(message)
                 time.sleep(3600)
-                podio = api.OAuthClient(
-                    client_id,
-                    client_secret,
-                    username,
-                    password
-                )
+                try:
+                    podio = api.OAuthClient(
+                        client_id,
+                        client_secret,
+                        username,
+                        password
+                    )
+                except:
+                    message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
+                    print(message)
             elif res == 3:
                 message = "Tentando novamente..."
                 print(message)
-                podio = api.OAuthClient(
-                    client_id,
-                    client_secret,
-                    username,
-                    password
-                )
+                try:
+                    podio = api.OAuthClient(
+                        client_id,
+                        client_secret,
+                        username,
+                        password
+                    )
+                except:
+                    message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
+                    print(message)
                 time.sleep(1)
             else:
                 hour = getHour()
