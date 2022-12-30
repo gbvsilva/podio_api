@@ -1,11 +1,12 @@
 import datetime
-from get_time import getHour
 
 from psycopg2 import Error as dbError
 from get_mydb import getDB
 
 from pypodio2.transport import TransportException
 from podio_tools import handlingPodioError, getFieldValues
+
+from logging_tools import logger
 
 # Inserindo dados no Banco. Retorna 0 se nao ocorreram erros
 # Retorna 1 caso precise refazer a estrutura do Banco, excluindo alguma(s) tabela(s).
@@ -51,9 +52,8 @@ def insertItems(podio, apps_ids):
                                 last_event_on_db = cursor.fetchone()[0]
 
                                 if last_event_on_podio > last_event_on_db:
-                                    hour = getHour()
-                                    message = f"{hour} -> Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"
-                                    print(message)
+                                    message = f"Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}'"
+                                    logger.info(message)
                                     cursor.execute(f"DELETE FROM podio.{tableName} WHERE id='{item['item_id']}'")
 
                             if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:
@@ -76,14 +76,12 @@ def insertItems(podio, apps_ids):
                                 query.append(")")
                                 try:
                                     cursor.execute("".join(query))
-                                    hour = getHour()
-                                    message = f"{hour} -> {''.join(query)}"
-                                    print(message)
+                                    message = f"{''.join(query)}"
+                                    logger.info(message)
                                     mydb.commit()
                                 except dbError as err:
-                                    hour = getHour()
-                                    message = f"{hour} -> Aplicativo alterado. Excluindo a tabela \"{tableName}\". {err}"
-                                    print(message)
+                                    message = f"Aplicativo alterado. Excluindo a tabela \"{tableName}\". {err}"
+                                    logger.info(message)
                                     cursor.execute(f"DROP TABLE podio.{tableName}")
                                     return 1
                 except TransportException as err:

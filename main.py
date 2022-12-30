@@ -10,7 +10,7 @@ from podio_insert_items import insertItems
 from podio_tools import handlingPodioError
 
 import time
-
+from logging_tools import logger
 
 if __name__ == '__main__':
     # Período de atualização do banco
@@ -24,9 +24,8 @@ if __name__ == '__main__':
     # Apps IDs
     apps_ids = list(map(int, env.get('PODIO_APPS_IDS').split(',')))
 
-    #print(client_id, client_secret, username, password)
     message = "==== PODIO API PYTHON SCRIPT ===="
-    print(message)
+    logger.info(message)
     # Autenticando na plataforma do Podio com as credenciais recuperadas acima
     try:
         podio = api.OAuthClient(
@@ -39,15 +38,14 @@ if __name__ == '__main__':
     except TransportException as err:
         handled = handlingPodioError(err)
         if handled == 'status_400':
-            print("Terminando o programa.")
+            logger.info("Terminando o programa.")
         exit(1)
     else:
-        #print(podio)
-        #print(workspaces)
+
         cycle = 1
         while True:
             message = f"==== Ciclo {cycle} ===="
-            print(message)
+            logger.info(message)
             res = createTables(podio, apps_ids)
             if res == 0:
                 result = insertItems(podio, apps_ids)
@@ -55,7 +53,7 @@ if __name__ == '__main__':
                 if result == 2:
                     hour = getHour(hours=1)
                     message = f"Esperando a hora seguinte. Até às {hour}"
-                    print(message)
+                    logger.info(message)
                     time.sleep(3600)
                     try:
                         podio = api.OAuthClient(
@@ -66,12 +64,12 @@ if __name__ == '__main__':
                         )
                     except:
                         message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
-                        print(message)
+                        logger.error(message)
                 elif result == 0:
                     # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     hours = getHour(hours=8)
                     message = f"Esperando as próximas {timeOffset//3600}hs. Até às {hours}"
-                    print(message)
+                    logger.info(message)
                     time.sleep(timeOffset)
                     try:
                         podio = api.OAuthClient(
@@ -82,10 +80,10 @@ if __name__ == '__main__':
                         )
                     except:
                         message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
-                        print(message)
+                        logger.error(message)
                 else:
                     message = "Tentando novamente..."
-                    print(message)
+                    logger.info(message)
                     try:
                         podio = api.OAuthClient(
                             client_id,
@@ -95,12 +93,12 @@ if __name__ == '__main__':
                         )
                     except:
                         message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
-                        print(message)
+                        logger.error(message)
                     time.sleep(1)
             elif res == 2:
                 hour = getHour(hours=1)
                 message = f"Esperando a hora seguinte às {hour}"
-                print(message)
+                logger.info(message)
                 time.sleep(3600)
                 try:
                     podio = api.OAuthClient(
@@ -111,10 +109,10 @@ if __name__ == '__main__':
                     )
                 except:
                     message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
-                    print(message)
+                    logger.error(message)
             elif res == 3:
                 message = "Tentando novamente..."
-                print(message)
+                logger.info(message)
                 try:
                     podio = api.OAuthClient(
                         client_id,
@@ -124,11 +122,10 @@ if __name__ == '__main__':
                     )
                 except:
                     message = 'Erro na obtenção do novo cliente Podio! Tentando novamente...'
-                    print(message)
+                    logger.error(message)
                 time.sleep(1)
             else:
-                hour = getHour()
-                message = f"{hour} -> Erro inesperado na criação/atualização do BD. Terminando o programa."
-                print(message)
+                message = f"Erro inesperado na criação/atualização do BD. Terminando o programa."
+                logger.error(message)
                 exit(1)
             cycle += 1

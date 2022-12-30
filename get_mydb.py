@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 from get_time import getHour
+from logging_tools import logger
 
 def getDB():
     try:
@@ -16,8 +17,8 @@ def getDB():
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     except psycopg2.Error as err:
         # Inatividade do banco ou credenciais inválidas
-        message = f"{getHour()} -> Erro inesperado no acesso inicial ao BD. Terminando o programa. {err}"
-        print(message)
+        message = f"Erro inesperado no acesso inicial ao BD. Terminando o programa. Detalhes: {str(err)}"
+        logger.error(message)
         exit(1)
     else:
         return mydb

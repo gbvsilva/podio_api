@@ -1,5 +1,3 @@
-from get_time import getHour
-
 from psycopg2 import Error as dbError
 from get_mydb import getDB
 
@@ -7,6 +5,7 @@ from get_mydb import getDB
 from pypodio2.transport import TransportException
 from podio_tools import handlingPodioError
 
+from logging_tools import logger
 
 # Rotina para a criação inicial do banco de dados Postgres.
 # Recebe a variável autenticada na API Podio.
@@ -41,20 +40,17 @@ def createTables(podio, apps_ids):
                 query.append(")")
 
                 cursor.execute("".join(query))
-                hour = getHour()
-                message = f"{hour} -> {''.join(query)}"
+                message = f"{''.join(query)}"
                 mydb.commit()
-                print(message)
+                logger.info(message)
             # Caso tabela esteja inativa no Podio, excluí-la
             elif appInfo.get('status') != "active" and (tableName,) in tables:
                 cursor.execute(f"DROP TABLE podio.{tableName}")
-                hour = getHour()
-                message = f"{hour} -> Tabela inativa `{tableName}` excluída."
-                print(message)
+                message = f"Tabela inativa `{tableName}` excluída."
+                logger.info(message)
         except dbError as err:
-            hour = getHour()
-            message = f"{hour} -> Erro no acesso ao BD. {err}"
-            print(message)
+            message = f"Erro no acesso ao BD. {err}"
+            logger.error(message)
         except TransportException as err:
             handled = handlingPodioError(err)
             if handled == 'token_expired':
