@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import datetime
 
 from mysql.connector import Error as dbError
@@ -25,12 +27,11 @@ def insertItems(podio, apps_ids):
             tableName = spaceName+"__"+appName
 
             if (tableName,) in tables:
-                tableLabels = []
+                # Dados para preencher a tabela
+                tableData = OrderedDict()
                 for field in appInfo.get('fields'):
-                    if field['status'] == "active":
-                        label = field['external_id']
-                        label = label[:40]
-                        tableLabels.append("`" + label + "`")
+                    if field['status'] == 'active':
+                        tableData[field['external_id'][:40]] = "''"
 
                 # Fazendo requisicoes percorrendo todos os dados existentes
                 # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
@@ -60,19 +61,11 @@ def insertItems(podio, apps_ids):
                                 query = [f"INSERT INTO {tableName}", " VALUES", "("]
                                 query.extend([f"'{str(item['item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
 
-                                fields = [x for x in item['fields'] if f"`{x['external_id'][:40]}`" in tableLabels]
-                                # Fazendo a comparação entre os campos existentes e os preenchidos
-                                # Caso o campo esteja em branco no Podio, preencher com '?'
-                                j = 0
-                                for i in range(len(tableLabels)):
-                                    if j < len(fields) and str("`" + fields[j]['external_id'][:40] + "`") == tableLabels[i]:
-                                        values = getFieldValues(fields[j])
-                                        j += 1
-                                    else:
-                                        values = "''"
-                                    query.append(values)
-                                    query.append(",")
-                                query.pop()
+                                # Atualizando os dados com o que é obtido do Podio
+                                for field in item.get('fields'):
+                                    tableData.update({field['external_id'][:40]: getFieldValues(field)})
+
+                                query.extend(','.join(tableData.values()))
                                 query.append(")")
                                 try:
                                     cursor.execute("".join(query))
