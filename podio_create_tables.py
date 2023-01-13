@@ -40,8 +40,8 @@ def createTables(podio, apps_ids):
                         query.append(f", `{label}` TEXT")
                 query.append(")")
 
-                cursor.execute("".join(query))
-                message = f"{''.join(query)}"
+                message = ''.join(query)
+                cursor.execute(message)
                 #mydb.commit()
                 logger.info(message)
             # Caso tabela esteja inativa no Podio, excluí-la
