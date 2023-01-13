@@ -68,8 +68,8 @@ def insertItems(podio, apps_ids):
                                 query.extend(','.join(tableData.values()))
                                 query.append(")")
                                 try:
-                                    cursor.execute("".join(query))
-                                    message = f"{''.join(query)}"
+                                    message = ''.join(query)
+                                    cursor.execute(message)
                                     logger.info(message)
                                     mydb.commit()
                                 except dbError as err:
