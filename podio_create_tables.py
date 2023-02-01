@@ -40,7 +40,7 @@ def createTables(podio, apps_ids):
                         query.append(f", `{label}` TEXT")
                 query.append(")")
 
-                message = f"Criando tabela `{tableName}`"
+                message = f"Criando a tabela `{tableName}`"
                 cursor.execute(''.join(query))
                 #mydb.commit()
                 logger.info(message)
