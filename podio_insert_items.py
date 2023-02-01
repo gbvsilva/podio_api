@@ -54,7 +54,7 @@ def insertItems(podio, apps_ids):
                                 last_event_on_db = cursor.fetchone()[0]
 
                                 if last_event_on_podio > last_event_on_db:
-                                    message = f"Item com ID={item['item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}' e inserindo-o a seguir."
+                                    message = f"Item com ID={item['item_id']} e URL_ID={item['app_item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}' e inserindo-o a seguir."
                                     logger.info(message)
                                     cursor.execute(f"DELETE FROM {tableName} WHERE id='{item['item_id']}'")
                             if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:
@@ -70,7 +70,7 @@ def insertItems(podio, apps_ids):
                                 query.extend(','.join(tableData.values()))
                                 query.append(")")
                                 try:
-                                    message = f"Inserindo item `{item['item_id']}` na tabela `{tableName}`"
+                                    message = f"Inserindo item de ID={item['item_id']} e URL_ID={item['app_item_id']} na tabela `{tableName}`"
                                     cursor.execute(''.join(query))
                                     logger.info(message)
                                     mydb.commit()
