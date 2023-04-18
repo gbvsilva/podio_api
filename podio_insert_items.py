@@ -45,7 +45,7 @@ def insertItems(podio, apps_ids):
                                         {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
                         items = filteredItems.get('items')
                         for item in items:
-                             # Buscando a última atualização do Item no banco
+                            # Buscando a última atualização do Item no banco
                             cursor.execute(f"SELECT \"last_event_on\" FROM podio.{tableName} WHERE id='{item['item_id']}'")
                             last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
                                                     "%Y-%m-%d %H:%M:%S")
