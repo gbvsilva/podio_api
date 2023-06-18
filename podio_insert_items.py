@@ -28,10 +28,10 @@ def insertItems(podio, apps_ids):
 
             if (tableName,) in tables:
                 # Dados para preencher a tabela
-                tableData = OrderedDict()
+                tableDataModel = OrderedDict()
                 for field in appInfo.get('fields'):
                     if field['status'] == 'active':
-                        tableData[field['external_id'][:40]] = "''"
+                        tableDataModel[field['external_id'][:40]] = "''"
 
                 # Fazendo requisicoes percorrendo todos os dados existentes
                 # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
@@ -46,6 +46,9 @@ def insertItems(podio, apps_ids):
                                         {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
                         items = filteredItems.get('items')
                         for item in items:
+                            # Novo item sendo a cópia do modelo de dados zerado, ou seja, sem valores
+                            newItem = tableDataModel.copy()
+        
                             # Buscando a última atualização do Item no banco
                             cursor.execute(f"SELECT `last_event_on` FROM {tableName} WHERE `id`='{item['item_id']}'")
                             last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
@@ -64,10 +67,10 @@ def insertItems(podio, apps_ids):
                                 # Atualizando os dados com o que é obtido do Podio
                                 for field in item.get('fields'):
                                     # O item ainda pode trazer informações antigas não mais usadas. Daí a checagem.
-                                    if field['external_id'][:40] in tableData:
-                                        tableData.update({field['external_id'][:40]: getFieldValues(field)})
+                                    if field['external_id'][:40] in tableDataModel:
+                                        newItem.update({field['external_id'][:40]: getFieldValues(field)})
 
-                                query.extend(','.join(tableData.values()))
+                                query.extend(','.join(newItem.values()))
                                 query.append(")")
                                 try:
                                     message = f"Inserindo item de ID={item['item_id']} e URL_ID={item['app_item_id']} na tabela `{tableName}`"
