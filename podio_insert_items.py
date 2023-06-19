@@ -47,7 +47,7 @@ def insertItems(podio, apps_ids):
                         for item in items:
                             # Novo item sendo a cópia do modelo de dados zerado, ou seja, sem valores
                             newItem = tableDataModel.copy()
-        
+
                             # Buscando a última atualização do Item no banco
                             cursor.execute(f"SELECT \"last_event_on\" FROM podio.{tableName} WHERE id='{item['item_id']}'")
                             last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
