@@ -8,12 +8,12 @@ def handlingPodioError(err):
     message = ""
     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
         message = f"Quantidade de requisições chegou ao limite por hora."
-        logger.info(message)
+        logger.warning(message)
         return "rate_limit"
     if err.status['status'] == '401':
         # Token expirado. Re-autenticando
         message = f"Token expirado. Renovando..."
-        logger.info(message)
+        logger.warning(message)
         return "token_expired"
     if err.status['status'] == '400':
         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
@@ -26,15 +26,15 @@ def handlingPodioError(err):
             message = f"Senha do cliente inválido."
         else:
             message = f"Parâmetro nulo na query. {err}"
-            logger.info(message)
+            logger.warning(message)
             return "null_query"
         return "status_400"
     if err.status['status'] == '504':
         message = f"Servidor demorou muito para responder. {err}"
-        logger.info(message)
+        logger.warning(message)
         return "status_504"
     message = f"Erro inesperado no acesso a API. {err}"
-    logger.info(message)
+    logger.warning(message)
     return "not_known_yet"
 
 
