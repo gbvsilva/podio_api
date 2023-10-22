@@ -1,11 +1,26 @@
-from os import environ as env
-import mysql.connector
+from os import getenv
 
-def getDB():
-    mydb = mysql.connector.connect(
-        host=env.get('MYSQL_HOST'),
-        user=env.get('MYSQL_USER'),
-        password=env.get('MYSQL_PASSWORD'),
-        port=env.get('MYSQL_PORT')
-    )
-    return mydb
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+from get_time import get_hour
+
+from logging_tools import logger
+
+def get_db():
+    try:
+        mydb = psycopg2.connect(
+            host=getenv('POSTGRES_HOST'),
+            user=getenv('POSTGRES_USERNAME'),
+            password=getenv('POSTGRES_PASSWORD'),
+            dbname=getenv('POSTGRES_DATABASE'),
+            port=getenv('POSTGRES_PORT')
+        )
+        mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    except psycopg2.Error as err:
+        # Inatividade do banco ou credenciais inválidas
+        message = f"Erro inesperado no acesso inicial ao BD. Terminando o programa. Detalhes: {str(err)}"
+        logger.error(message)
+        exit(1)
+    else:
+        return mydb

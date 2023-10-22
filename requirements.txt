@@ -1,10 +1,4 @@
-certifi==2021.10.8
-charset-normalizer==2.0.10
 httplib2==0.20.2
-idna==3.3
-mysql-connector-python==8.0.28
-protobuf==3.19.3
-pyparsing==3.0.6
-requests==2.27.1
-urllib3==1.26.8
+psycopg2-binary==2.9.3
+pyparsing==3.0.7
 git+https://github.com/gbvsilva/podio-py.git#egg=pypodio2
