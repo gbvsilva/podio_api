@@ -5,7 +5,7 @@ from pypodio2.transport import TransportException
 from logging_tools import logger
 
 
-def handling_podio_error(err: TransportException):
+def handling_podio_error(err: TransportException) -> str:
     """Management of Podio API errors
 
     Args:
@@ -44,7 +44,7 @@ def handling_podio_error(err: TransportException):
     return "not_known_yet"
 
 
-def get_field_text_values(field: dict):
+def get_field_text_values(field: dict) -> str:
     """Get Podio item field values as text.
 
     Args:
