@@ -1,6 +1,6 @@
 import datetime
 
-def getHour(**timedelta):
+def get_hour(**timedelta):
     if timedelta:
         hours = timedelta.get('hours', 0)
         minutes = timedelta.get('minutes', 0)

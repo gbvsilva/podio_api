@@ -1,100 +1,120 @@
+"""Functions to insert items from Podio to the database."""
 from collections import OrderedDict
 
 import datetime
 
-from psycopg2 import Error as dbError
-from get_mydb import getDB
-
+from pypodio2.client import Client
 from pypodio2.transport import TransportException
-from podio_tools import handlingPodioError, getFieldValues
+from psycopg2 import Error as dbError
+
+from get_time import get_hour
+from get_mydb import get_db
+
+from podio_tools import handling_podio_error, get_field_text_values
 
 from logging_tools import logger
 
-# Inserindo dados no Banco. Retorna 0 se nao ocorreram erros
-# Retorna 1 caso precise refazer a estrutura do Banco, excluindo alguma(s) tabela(s).
-# Retorna 2 caso seja atingido o limite de requisições por hora
-def insertItems(podio, apps_ids):
-    mydb = getDB()
+
+def insert_items(podio: Client, apps_ids: list):
+    """Insert Podio items in the database.
+
+    Args:
+        podio (Client): Podio client
+        apps_ids (list): List of Podio apps IDs
+
+    Returns:
+        int: Code to handle the main loop. `0` if no errors,
+        `1` if the Podio API limit is reached.
+        `2` encountered another error with Podio,
+    """
+    # Waiting for DB connection
+    mydb = None
+    while not mydb:
+        mydb = get_db()
     cursor = mydb.cursor()
+
     for app_id in apps_ids:
         try:
-            appInfo = podio.Application.find(app_id)
-            spaceName = podio.Space.find(appInfo.get('space_id')).get('url_label').replace('-', '_')
-            appName = appInfo.get('url_label').replace('-', '_')
+            app_info = podio.Application.find(app_id)
+            space_name = podio.Space.find(app_info.get('space_id')).get('url_label').replace('-', '_')
+            app_name = app_info.get('url_label').replace('-', '_')
             cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'podio' ORDER BY table_name;")
             tables = cursor.fetchall()
-            tableName = spaceName+"__"+appName
+            table_name = space_name + "__" + app_name
 
-            if (tableName,) in tables:
-                # Dados para preencher a tabela
-                tableDataModel = OrderedDict()
-                for field in appInfo.get('fields'):
+            if (table_name,) in tables:
+                # Data to fill in table
+                table_data_model = OrderedDict()
+                for field in app_info.get('fields'):
                     if field['status'] == 'active':
-                        tableDataModel[field['external_id'][:40]] = "''"
+                        table_data_model[field['external_id'][:40]] = "''"
 
-                # Fazendo requisicoes percorrendo todos os dados existentes
-                # Para isso define-se o limite de cada consulta como 500 (o maximo) e o offset
-                # Ou seja, a cada passo novo (offset) items são requisitados, com base na
-                # quantidade de items obtidos na última iteração
-                numberOfItems = podio.Application.get_items(appInfo.get('app_id'))['total']
+                # Making requests, iterating over all existing data.
+                # For that, the limit of each query is set to 500 (the maximum) and the offset
+                # That is, at each new step (offset) items are requested, based on
+                # the number of items obtained in the last iteration.
+                number_of_items = podio.Application.get_items(app_info.get('app_id'))['total']
                 try:
-                    for step in range(0, numberOfItems, 500):
-                        # O valor padrão do offset é 0 de acordo com a documentação da API.
-                        # Ordenando de forma crescente da data de criação para unificar a estruturação do BD.
-                        filteredItems = podio.Item.filter(appInfo.get('app_id'),
+                    for step in range(0, number_of_items, 500):
+                        # The default value of the offset is 0 according to the API documentation.
+                        # Sorting in ascending order of creation date to unify the DB structuring.
+                        filter_response = podio.Item.filter(app_info.get('app_id'),
                                         {"offset": step, "sort_by": "created_on", "sort_desc": False, "limit": 500})
-                        items = filteredItems.get('items')
+                        items = filter_response.get('items')
                         for item in items:
-                            # Novo item sendo a cópia do modelo de dados zerado, ou seja, sem valores
-                            newItem = tableDataModel.copy()
+                            # New item being the copy of the model
+                            new_item = table_data_model.copy()
 
-                            # Buscando a última atualização do Item no banco
-                            cursor.execute(f"SELECT \"last_event_on\" FROM podio.{tableName} WHERE id='{item['item_id']}'")
+                            cursor.execute(f"SELECT \"last_event_on\" FROM podio.{table_name} WHERE id='{item['item_id']}'")
                             last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
                                                     "%Y-%m-%d %H:%M:%S")
                             if cursor.rowcount > 0:
                                 last_event_on_db = cursor.fetchone()[0]
 
                                 if last_event_on_podio > last_event_on_db:
-                                    message = f"Item com ID={item['item_id']} e URL_ID={item['app_item_id']} atualizado no Podio. Excluindo-o da tabela '{tableName}' e inserindo-o a seguir."
+                                    message = f"Item de ID={item['item_id']} e URL_ID={item['app_item_id']} atualizado no Podio. Excluindo-o da tabela '{table_name}' e inserindo-o a seguir."
                                     logger.info(message)
-                                    cursor.execute(f"DELETE FROM podio.{tableName} WHERE id='{item['item_id']}'")
+                                    cursor.execute(f"DELETE FROM podio.{table_name} WHERE id='{item['item_id']}'")
 
                             if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:
-                                query = [f"INSERT INTO podio.{tableName}", " VALUES", "("]
+                                query = [f"INSERT INTO podio.{table_name}", " VALUES", "("]
                                 query.extend([f"'{str(item['item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
 
-                                # Atualizando os dados com o que é obtido do Podio
+                                # Update new database item data with the item data from Podio
                                 for field in item.get('fields'):
-                                    # O item ainda pode trazer informações antigas não mais usadas. Daí a checagem.
-                                    if field['external_id'][:40] in tableDataModel:
-                                        newItem.update({field['external_id'][:40]: getFieldValues(field)})
+                                    # The item may still contain old information that is no longer used, hence the check.
+                                    if field['external_id'][:40] in table_data_model:
+                                        new_item.update({field['external_id'][:40]: get_field_text_values(field)})
 
-                                query.extend(','.join(newItem.values()))
+                                query.extend(','.join(new_item.values()))
                                 query.append(")")
                                 try:
-                                    message = f"Inserindo item de ID={item['item_id']} e URL_ID={item['app_item_id']} na tabela `{tableName}`"
+                                    message = f"Inserindo item de ID={item['item_id']} e URL_ID={item['app_item_id']} na tabela `{table_name}`"
                                     cursor.execute(''.join(query))
                                     logger.info(message)
                                     mydb.commit()
                                 except dbError as err:
-                                    message = f"Aplicativo alterado. Excluindo a tabela \"{tableName}\". {err}"
+                                    message = f"Aplicativo alterado. Excluindo a tabela \"{table_name}\". {err}"
                                     logger.info(message)
-                                    cursor.execute(f"DROP TABLE podio.{tableName}")
-                                    return 1
+                                    cursor.execute(f"DROP TABLE podio.{table_name}")
+                                    raise dbError('Tabela excluída com sucesso!') from err
+
                 except TransportException as err:
-                    handled = handlingPodioError(err)
-                    if handled == 'status_504' or handled == 'null_query' or handled == 'status_400' or handled == 'token_expired':
-                        return 1
+                    mydb.close()
+                    handled = handling_podio_error(err)
                     if handled == 'rate_limit':
-                        return 2
+                        return 1
+                    return 2
+
+                except dbError as err:
+                    continue
 
         except TransportException as err:
-            handled = handlingPodioError(err)
-            if handled == 'status_504' or handled == 'status_400' or handled == 'token_expired':
-                return 1
+            mydb.close()
+            handled = handling_podio_error(err)
             if handled == 'rate_limit':
-                return 2
-            return 1
+                return 1
+            return 2
+
     mydb.close()
     return 0

@@ -1,50 +1,64 @@
+"""Auxiliary functions for Podio API"""
 import json
-from get_time import getHour
 
+from pypodio2.transport import TransportException
 from logging_tools import logger
 
-def handlingPodioError(err):
-    hour = getHour()
-    message = ""
+
+def handling_podio_error(err: TransportException):
+    """Management of Podio API errors
+
+    Args:
+        err (TransportException): Podio transport error exception
+
+    Returns:
+        str: A string with the error message
+    """
     if 'x-rate-limit-remaining' in err.status and err.status['x-rate-limit-remaining'] == '0':
-        message = f"Quantidade de requisições chegou ao limite por hora."
-        logger.info(message)
+        logger.warning("Quantidade de requisições chegou ao limite por hora.")
         return "rate_limit"
+
     if err.status['status'] == '401':
-        # Token expirado. Re-autenticando
-        message = f"Token expirado. Renovando..."
-        logger.info(message)
+        logger.warning("Token expirado. Renovando...")
         return "token_expired"
+
     if err.status['status'] == '400':
         if json.loads(err.content)['error_detail'] == 'oauth.client.invalid_secret':
-            message = f"Secret inválido."
+            message = "Secret inválido!"
         elif json.loads(err.content)['error_detail'] == 'user.invalid.username':
-            message = f"Usuário inválido."
+            message = "Usuário inválido!"
         elif json.loads(err.content)['error_detail'] == 'oauth.client.invalid_id':
-            message = f"ID do cliente inválido."
+            message = "ID do cliente inválido!"
         elif json.loads(err.content)['error_detail'] == 'user.invalid.password':
-            message = f"Senha do cliente inválido."
+            message = "Senha do cliente inválida!"
         else:
-            message = f"Parâmetro nulo na query. {err}"
-            logger.info(message)
-            return "null_query"
+            message = f"Parâmetro nulo na query! Detalhes: {err}"
+        logger.warning(message)
         return "status_400"
+
     if err.status['status'] == '504':
-        message = f"Servidor demorou muito para responder. {err}"
-        logger.info(message)
+        logger.warning("Servidor demorou muito para responder!")
         return "status_504"
-    else:
-        message = f"Erro inesperado no acesso a API. {err}"
-    logger.info(message)
+
+    logger.warning("Erro inesperado no acesso a API! Detalhes: %s", str(err))
     return "not_known_yet"
 
 
-def getFieldValues(field):
+def get_field_text_values(field: dict):
+    """Get Podio item field values as text.
+
+    Args:
+        field (dict): Podio item field
+
+    Returns:
+        str: Values as text
+    """
+    # 1. Its return is named `values` because it can be multivalued.
+    # 2. All multivalued fields are concatenated with a pipe '|'.
+    # 3. `values` is wrapped by single quotes to insert in SQL query.
+    # 4. All double quotes is replaced by single quotes.
     values = "'"
-    # De acordo com o tipo do campo há uma determinada forma de recuperar esse dado
     if field['type'] == "contact":
-        # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
-        # Podem haver aspas duplas inseridas no valor do campo. Substituir com aspas simples
         for elem in field['values']:
             values += elem['value']['name'].replace("\'", "") + "|"
         values = values[:-1]
@@ -60,12 +74,11 @@ def getFieldValues(field):
     elif field['type'] == "embed":
         values += field['values'][0]['embed']['url']
     elif field['type'] == "app":
-        # Nesse caso o campo é multivalorado, então concatena-se com um pipe '|'
         for val in field['values']:
             values += val['value']['title'].replace("\'", "") + "|"
         values = values[:-1]
     else:
         values += str(field['values'][0]['value']).replace("\'", "")
-    values += "'"
 
+    values += "'"
     return values

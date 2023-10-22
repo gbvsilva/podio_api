@@ -1,18 +1,20 @@
-from os import environ as env
+from os import getenv
+
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from get_time import getHour
+from get_time import get_hour
+
 from logging_tools import logger
 
-def getDB():
+def get_db():
     try:
         mydb = psycopg2.connect(
-            host=env.get('POSTGRES_HOST'),
-            user=env.get('POSTGRES_USERNAME'),
-            password=env.get('POSTGRES_PASSWORD'),
-            dbname=env.get('POSTGRES_DATABASE'),
-            port=env.get('POSTGRES_PORT')
+            host=getenv('POSTGRES_HOST'),
+            user=getenv('POSTGRES_USERNAME'),
+            password=getenv('POSTGRES_PASSWORD'),
+            dbname=getenv('POSTGRES_DATABASE'),
+            port=getenv('POSTGRES_PORT')
         )
         mydb.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     except psycopg2.Error as err:
