@@ -5,7 +5,7 @@ from pypodio2.transport import TransportException
 from logging_tools import logger
 
 
-def handling_podio_error(err: TransportException) -> str:
+def handling_podio_error(err: TransportException):
     """Management of Podio API errors
 
     Args:
