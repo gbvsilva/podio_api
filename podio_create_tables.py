@@ -36,14 +36,15 @@ def create_tables(podio: Client, apps_ids: list):
             space_name = podio.Space.find(app_info.get('space_id')).get('url_label').replace('-', '_')
             app_name = app_info.get('url_label').replace('-', '_')
             cursor.execute("SELECT table_name FROM information_schema.tables "\
-                "WHERE table_schema = 'podio' ORDER BY table_name;")
+                "WHERE table_schema = 'podio_test' ORDER BY table_name;")
             tables = cursor.fetchall()
             table_name = space_name + "__" + app_name
             if app_info.get('status') == "active" and (table_name,) not in tables:
-                query = [f"CREATE TABLE IF NOT EXISTS podio.{table_name}", "("]
-                query.append("\"id\" TEXT PRIMARY KEY NOT NULL")
-                query.append(", \"created_on\" TIMESTAMP")
-                query.append(", \"last_event_on\" TIMESTAMP")
+                query = [f"CREATE TABLE IF NOT EXISTS podio_test.{table_name}", "("]
+                query.append('"item_id" TEXT PRIMARY KEY NOT NULL')
+                query.append(', "app_item_id" TEXT')
+                query.append(', "created_on" TIMESTAMP')
+                query.append(', "last_event_on" TIMESTAMP')
 
                 for field in app_info.get('fields'):
                     if field['status'] == "active":
@@ -60,7 +61,7 @@ def create_tables(podio: Client, apps_ids: list):
 
             # If the app is inactive on Podio, delete its respescive table
             elif app_info.get('status') != "active" and (table_name,) in tables:
-                cursor.execute(f"DROP TABLE podio.{table_name}")
+                cursor.execute(f"DROP TABLE podio_test.{table_name}")
                 message = f"Tabela inativa `{table_name}` excluída."
                 logger.info(message)
 

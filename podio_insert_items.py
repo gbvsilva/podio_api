@@ -38,7 +38,7 @@ def insert_items(podio: Client, apps_ids: list):
             app_info = podio.Application.find(app_id)
             space_name = podio.Space.find(app_info.get('space_id')).get('url_label').replace('-', '_')
             app_name = app_info.get('url_label').replace('-', '_')
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'podio' ORDER BY table_name;")
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'podio_test' ORDER BY table_name;")
             tables = cursor.fetchall()
             table_name = space_name + "__" + app_name
 
@@ -65,20 +65,20 @@ def insert_items(podio: Client, apps_ids: list):
                             # New item being the copy of the model
                             new_item = table_data_model.copy()
 
-                            cursor.execute(f"SELECT \"last_event_on\" FROM podio.{table_name} WHERE id='{item['item_id']}'")
-                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'],
-                                                    "%Y-%m-%d %H:%M:%S")
-                            if cursor.rowcount > 0:
-                                last_event_on_db = cursor.fetchone()[0]
+                            last_event_on_podio = datetime.datetime.strptime(item['last_event_on'], "%Y-%m-%d %H:%M:%S")
+                            result = cursor.execute(f"SELECT last_event_on FROM podio_test.{table_name} WHERE item_id='{item['item_id']}'")
+                            if result:
+
+                                last_event_on_db = result[0][0]
 
                                 if last_event_on_podio > last_event_on_db:
                                     message = f"Item de ID={item['item_id']} e URL_ID={item['app_item_id']} atualizado no Podio. Excluindo-o da tabela '{table_name}' e inserindo-o a seguir."
                                     logger.info(message)
-                                    cursor.execute(f"DELETE FROM podio.{table_name} WHERE id='{item['item_id']}'")
+                                    cursor.execute(f"DELETE FROM podio_test.{table_name} WHERE item_id='{item['item_id']}'")
 
-                            if cursor.rowcount == 0 or last_event_on_podio > last_event_on_db:
-                                query = [f"INSERT INTO podio.{table_name}", " VALUES", "("]
-                                query.extend([f"'{str(item['item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
+                            if not result or last_event_on_podio > last_event_on_db:
+                                query = [f"INSERT INTO podio_test.{table_name}", " VALUES", "("]
+                                query.extend([f"'{str(item['item_id'])}','{str(item['app_item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
 
                                 # Update new database item data with the item data from Podio
                                 for field in item.get('fields'):
@@ -96,7 +96,7 @@ def insert_items(podio: Client, apps_ids: list):
                                 except dbError as err:
                                     message = f"Aplicativo alterado. Excluindo a tabela \"{table_name}\". {err}"
                                     logger.info(message)
-                                    cursor.execute(f"DROP TABLE podio.{table_name}")
+                                    cursor.execute(f"DROP TABLE podio_test.{table_name}")
                                     raise dbError('Tabela excluída com sucesso!') from err
 
                 except TransportException as err:
