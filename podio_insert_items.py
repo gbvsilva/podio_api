@@ -66,17 +66,17 @@ def insert_items(podio: Client, apps_ids: list):
                             new_item = table_data_model.copy()
 
                             last_event_on_podio = datetime.datetime.strptime(item['last_event_on'], "%Y-%m-%d %H:%M:%S")
-                            result = cursor.execute(f"SELECT last_event_on FROM podio_test.{table_name} WHERE item_id='{item['item_id']}'")
-                            if result:
+                            cursor.execute(f"SELECT last_event_on FROM podio_test.{table_name} WHERE item_id='{item['item_id']}'")
+                            if cursor.rowcount:
 
-                                last_event_on_db = result[0][0]
+                                last_event_on_db = cursor.fetchone()[0]
 
                                 if last_event_on_podio > last_event_on_db:
                                     message = f"Item de ID={item['item_id']} e URL_ID={item['app_item_id']} atualizado no Podio. Excluindo-o da tabela '{table_name}' e inserindo-o a seguir."
                                     logger.info(message)
                                     cursor.execute(f"DELETE FROM podio_test.{table_name} WHERE item_id='{item['item_id']}'")
 
-                            if not result or last_event_on_podio > last_event_on_db:
+                            if not cursor.rowcount or last_event_on_podio > last_event_on_db:
                                 query = [f"INSERT INTO podio_test.{table_name}", " VALUES", "("]
                                 query.extend([f"'{str(item['item_id'])}','{str(item['app_item_id'])}','{item['created_on']}','{last_event_on_podio}',"])
 
