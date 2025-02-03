@@ -6,7 +6,7 @@ from logging_tools import logger
 
 
 def handling_podio_error(err: TransportException) -> str:
-    """Management of Podio API errors
+    """ Management of Podio API errors.
 
     Args:
         err (TransportException): Podio transport error exception
@@ -45,18 +45,20 @@ def handling_podio_error(err: TransportException) -> str:
 
 
 def get_field_text_values(field: dict) -> str:
-    """Get Podio item field values as text.
+    """ Get Podio item field values as text.
+
+    Constraints:
+        1: Its return is named `values` because it can be multivalued.
+        2: All multivalued fields are concatenated with a pipe '|'.
+        3: `values` is wrapped by single quotes to insert in SQL query.
+        4: All double quotes is replaced by single quotes.
 
     Args:
-        field (dict): Podio item field
+        field (dict): Podio item field.
 
     Returns:
-        str: Values as text
+        str: Values as text.
     """
-    # 1. Its return is named `values` because it can be multivalued.
-    # 2. All multivalued fields are concatenated with a pipe '|'.
-    # 3. `values` is wrapped by single quotes to insert in SQL query.
-    # 4. All double quotes is replaced by single quotes.
     values = "'"
     if field['type'] == "contact":
         for elem in field['values']:

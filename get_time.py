@@ -1,13 +1,21 @@
-import datetime
+""" Auxiliary functions to deal with time.
+"""
 
-def get_hour(**timedelta):
-    if timedelta:
-        hours = timedelta.get('hours', 0)
-        minutes = timedelta.get('minutes', 0)
-        seconds = timedelta.get('seconds', 0)
-        microseconds = timedelta.get('microseconds', 0)
-        offset = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds, microseconds=microseconds)
+from datetime import datetime, timedelta
 
-        return (datetime.datetime.now() + offset).strftime('%H:%M:%S')
+def get_hour(**delta):
+    """ Função que retorna a hora atual com um offset de tempo.
 
-    return datetime.datetime.now().strftime('%H:%M:%S')
+    Returns:
+        str: Hora atual com offset de tempo.
+    """
+    if delta:
+        hours = delta.get('hours', 0)
+        minutes = delta.get('minutes', 0)
+        seconds = delta.get('seconds', 0)
+        microseconds = delta.get('microseconds', 0)
+        offset = timedelta(hours=hours, minutes=minutes, seconds=seconds, microseconds=microseconds)
+
+        return (datetime.now() + offset).strftime('%H:%M:%S')
+
+    return datetime.now().strftime('%H:%M:%S')

@@ -40,13 +40,15 @@ if __name__ == '__main__':
     except TransportException as err:
         handled = handling_podio_error(err)
         if handled == 'status_400':
-            logger.error("Terminando o programa...")
-        exit(code=1)
+            logger.info("Terminando o programa.")
+        exit(1)
     else:
+
         CYCLE = 1
         while True:
             MESSAGE = f"==== Ciclo {CYCLE} ===="
             logger.info(MESSAGE)
+            # send_to_bot(MESSAGE)
 
             CREATION = create_tables(podio, apps_ids)
 
@@ -71,7 +73,6 @@ if __name__ == '__main__':
                         logger.warning(MESSAGE)
 
                 elif INSERTION == 0:
-                    # Nesse caso foi criado o primeiro snapshot do Podio no BD. Próxima iteração no dia seguinte
                     hours = get_hour(seconds=timeOffset)
                     MESSAGE = f"Esperando as próximas {timeOffset/3600}hs. Até às {hours}"
                     logger.info(MESSAGE)
@@ -137,4 +138,3 @@ if __name__ == '__main__':
                 MESSAGE = "Erro inesperado na criação/atualização do BD. Terminando o programa."
                 logger.error(MESSAGE)
                 exit(code=1)
-            CYCLE += 1
