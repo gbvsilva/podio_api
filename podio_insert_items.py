@@ -16,7 +16,7 @@ from logging_tools import logger
 
 
 def insert_items(podio: Client, apps_ids: list):
-    """Insert Podio items in the database.
+    """ Insert Podio items in the database.
 
     Args:
         podio (Client): Podio client

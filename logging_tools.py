@@ -2,7 +2,8 @@ import logging
 
 
 class CustomFormatter(logging.Formatter):
-    """Logging colored formatter, adapted from https://stackoverflow.com/a/56944256/3638629"""
+    """ Logging colored formatter, adapted from https://stackoverflow.com/a/56944256/3638629
+    """
 
     grey = '\x1b[38;21m'
     blue = '\x1b[38;5;39m'
@@ -44,5 +45,3 @@ stdout_handler.setFormatter(CustomFormatter(fmt))
 
 # Add handler to the logger
 logger.addHandler(stdout_handler)
-
-

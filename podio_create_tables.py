@@ -11,7 +11,7 @@ from podio_tools import handling_podio_error
 from logging_tools import logger
 
 def create_tables(podio: Client, apps_ids: list):
-    """Create tables in the database for each Podio app.
+    """ Create tables in the database for each Podio app.
 
     Args:
         podio (_type_): _description_
