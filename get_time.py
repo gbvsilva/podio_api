@@ -1,13 +1,13 @@
-""" Módulo de funções auxiliares de tempo.
+""" Auxiliary functions to deal with time.
 """
 
 from datetime import datetime, timedelta
 
 def get_hour(**delta):
-    """ Função que retorna a hora atual com um offset de tempo.
+    """ Apply a timedelta to a datetime.
 
     Returns:
-        str: Hora atual com offset de tempo.
+        str: DateTime with the delta applied.
     """
     if delta:
         hours = delta.get('hours', 0)
