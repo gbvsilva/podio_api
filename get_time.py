@@ -7,7 +7,7 @@ def get_hour(**delta):
     """ Apply a timedelta to a datetime.
 
     Returns:
-        str: Time with the delta applied.
+        str: DateTime with the delta applied.
     """
     if delta:
         hours = delta.get('hours', 0)
